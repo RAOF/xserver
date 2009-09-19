@@ -857,6 +857,10 @@ configServerFlags(XF86ConfFlagsPtr flagsconf, XF86OptionPtr layoutopts)
     xf86Msg(from, "%sutomatically enabling devices\n",
             xf86Info.autoEnableDevices ? "A" : "Not a");
 
+    if (xorgWayland) {
+            xf86Info.autoAddDevices = FALSE;
+            xf86Info.autoEnableDevices = FALSE;
+    }
     /*
      * Set things up based on the config file information.  Some of these
      * settings may be overridden later when the command line options are
