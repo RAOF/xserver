@@ -7,6 +7,10 @@ if DRI2
 DRI2_SUBDIR = dri2
 endif
 
+if HOSTED
+HOSTED_SUBDIR = hosted
+endif
+
 if XF86UTILS
 XF86UTILS_SUBDIR = utils
 endif
@@ -28,11 +32,11 @@ endif
 SUBDIRS = common ddc i2c x86emu $(INT10_SUBDIR) fbdevhw os-support parser \
 	  ramdac shadowfb $(VBE_SUBDIR) $(VGAHW_SUBDIR) $(XAA_SUBDIR) \
 	  loader dixmods exa modes \
-	  $(DRI_SUBDIR) $(DRI2_SUBDIR) $(XF86UTILS_SUBDIR) doc man
+	  $(DRI_SUBDIR) $(DRI2_SUBDIR) $(HOSTED_SUBDIR) $(XF86UTILS_SUBDIR) doc man
 
 DIST_SUBDIRS = common ddc i2c x86emu int10 fbdevhw os-support \
                parser ramdac shadowfb vbe vgahw xaa \
-               loader dixmods dri dri2 exa modes \
+               loader dixmods dri dri2 hosted exa modes \
 	       utils doc man
 
 bin_PROGRAMS = Xorg

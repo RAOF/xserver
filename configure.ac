@@ -990,6 +990,13 @@ if test "x$COMPOSITE" = xyes; then
 	COMPOSITE_INC='-I$(top_srcdir)/composite'
 fi
 
+HOSTED=yes
+AM_CONDITIONAL(HOSTED, [test "x$HOSTED" = xyes])
+if test "x$HOSTED" = xyes; then
+	AC_DEFINE(HOSTED, 1, [Support hosted mode])
+	REQUIRED_MODULES="$REQUIRED_MODULES wayland-client"
+fi
+
 AM_CONDITIONAL(MITSHM, [test "x$MITSHM" = xyes])
 if test "x$MITSHM" = xyes; then
 	AC_DEFINE(MITSHM, 1, [Support MIT-SHM extension])
@@ -2169,6 +2176,7 @@ hw/xfree86/dixmods/extmod/Makefile
 hw/xfree86/doc/Makefile
 hw/xfree86/dri/Makefile
 hw/xfree86/dri2/Makefile
+hw/xfree86/hosted/Makefile
 hw/xfree86/exa/Makefile
 hw/xfree86/exa/man/Makefile
 hw/xfree86/fbdevhw/Makefile
