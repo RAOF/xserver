@@ -1,0 +1,33 @@
+From 48d47d3bdc951c11f442c7607b6e27bcd3627751 Mon Sep 17 00:00:00 2001
+From: Julien Cristau <jcristau@debian.org>
+Date: Wed, 10 Nov 2010 16:54:31 +0100
+Subject: [PATCH] glx: don't crash in SwapBuffers without a context
+
+Fixed upstream in d7ded953c4d263e3dd3374dc03eea19e80c05bc6 (Implment
+GLXPixmaps.)
+
+Signed-off-by: Julien Cristau <jcristau@debian.org>
+Tested-by: François Guerraz <kubrick@fgv6.net>
+---
+ GL/glx/glxcmds.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/GL/glx/glxcmds.c b/GL/glx/glxcmds.c
+index 900a347..7330ff6 100644
+--- a/GL/glx/glxcmds.c
++++ b/GL/glx/glxcmds.c
+@@ -472,8 +472,9 @@ static int GetDrawableOrPixmap( __GLXcontext *glxc, GLXDrawable drawId,
+ 	if (pDraw->type == DRAWABLE_WINDOW) {
+ 	    VisualID vid = wVisual((WindowPtr)pDraw);
+ 
+-	    modes = _gl_context_modes_find_visual(glxc->pGlxScreen->modes,
+-						  vid);
++	    if (glxc)
++		modes = _gl_context_modes_find_visual(glxc->pGlxScreen->modes,
++						      vid);
+ 	} else {
+ 	    /*
+ 	    ** An X Pixmap is not allowed as a parameter (a GLX Pixmap
+-- 
+1.7.2.3
+

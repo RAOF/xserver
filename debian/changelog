@@ -1,3 +1,10 @@
+xorg-server (2:1.4.2-10.lenny4) UNRELEASED; urgency=low
+
+  * glx: don't crash in SwapBuffers if we don't have a context
+    (closes: #603015).
+
+ -- Julien Cristau <jcristau@debian.org>  Wed, 10 Nov 2010 16:57:18 +0100
+
 xorg-server (2:1.4.2-10.lenny3) stable; urgency=low
 
   * Cherry-pick patch from upstream to set umask to a sane value in Xorg

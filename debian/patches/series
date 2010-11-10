@@ -8,6 +8,7 @@
 08_better_dpms_logging.diff
 10_dont_look_in_home_for_config.diff
 11_dont_crash_on_bad_dri_mode.diff
+12_glx-don-t-crash-in-SwapBuffers-without-a-context.diff
 13_debian_add_xkbpath_env_variable.diff
 14_default_screen_section.diff
 15_X86EMU-added-blacklist-for-I-O-port-in-0-0xFF-range.patch
