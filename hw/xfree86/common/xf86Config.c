@@ -857,7 +857,7 @@ configServerFlags(XF86ConfFlagsPtr flagsconf, XF86OptionPtr layoutopts)
     xf86Msg(from, "%sutomatically enabling devices\n",
             xf86Info.autoEnableDevices ? "A" : "Not a");
 
-    if (xorgWayland) {
+    if (xorgHosted) {
             xf86Info.autoAddDevices = FALSE;
             xf86Info.autoEnableDevices = FALSE;
     }
