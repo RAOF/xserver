@@ -2007,7 +2007,7 @@ SetDeviceRedirectWindow(DeviceIntPtr dev, WindowPtr window)
     SpritePtr pSprite = dev->spriteInfo->sprite;
 
     pSprite->redirectWindow = window;
-    CheckMotion(NULL, dev->u.master);
+    CheckMotion(NULL, dev);
 }
 
 int
