@@ -995,6 +995,7 @@ AM_CONDITIONAL(HOSTED, [test "x$HOSTED" = xyes])
 if test "x$HOSTED" = xyes; then
 	AC_DEFINE(XORG_HOSTED, 1, [Support hosted mode])
 	REQUIRED_MODULES="$REQUIRED_MODULES wayland-client"
+	WAYLAND_SCANNER_RULES(['$(top_srcdir)/hw/xfree86/hosted'])
 fi
 
 AM_CONDITIONAL(MITSHM, [test "x$MITSHM" = xyes])

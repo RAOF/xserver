@@ -20,6 +20,8 @@ libhosted_la_SOURCES =				\
 	hosted.c				\
 	hosted-private.h			\
 	wayland.c				\
+	drm-client-protocol.h			\
+	drm-protocol.c				\
 	x11.c
 
 if DRM
@@ -27,3 +29,11 @@ libhosted_la_SOURCES += wayland-drm.c
 endif
 
 sdk_HEADERS = hosted.h
+
+BUILT_SOURCES =					\
+	drm-client-protocol.h			\
+	drm-protocol.c
+
+CLEANFILES = $(BUILT_SOURCES)
+
+@wayland_scanner_rules@
