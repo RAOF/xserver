@@ -1,3 +1,9 @@
+xorg-server (2:1.10.2-1+wheezy1) testing; urgency=low
+
+  * Rebuild in testing against mesa without multiarch support.
+
+ -- Cyril Brulebois <kibi@debian.org>  Sat, 18 Jun 2011 10:49:00 +0200
+
 xorg-server (2:1.10.2-1) unstable; urgency=low
 
   * New upstream release.
