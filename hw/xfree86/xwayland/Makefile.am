@@ -21,7 +21,9 @@ libxwayland_la_SOURCES =			\
 	xwayland-input.c			\
 	xwayland-private.h			\
 	drm-client-protocol.h			\
-	drm-protocol.c
+	drm-protocol.c				\
+	xserver-client-protocol.h		\
+	xserver-protocol.c
 
 if DRM
 libxwayland_la_SOURCES += xwayland-drm.c
@@ -31,7 +33,9 @@ sdk_HEADERS = xwayland.h
 
 BUILT_SOURCES =					\
 	drm-client-protocol.h			\
-	drm-protocol.c
+	drm-protocol.c				\
+	xserver-client-protocol.h		\
+	xserver-protocol.c
 
 CLEANFILES = $(BUILT_SOURCES)
 
