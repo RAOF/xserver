@@ -118,12 +118,10 @@ Breaks:
  xserver-xorg-video-sunbw2 (<= 1:1.1.0-5),
  xserver-xorg-video-v4l (<< 1:0.2.0),
  xserver-xorg-video-vga (<= 1:4.1.0-8),
- libgl1-mesa-dri (<< 7.10.2-4),
- libgl1-mesa-dri-experimental (<< 7.10.2-4),
- libgl1-mesa-dri-no-multiarch,
 Provides:
  ${videoabi},
  ${inputabi},
+ xserver-xorg-core-no-multiarch,
 Description: Xorg X server - core server
  The Xorg X server is an X server for several architectures and operating
  systems, which is derived from the XFree86 4.x series of X servers.

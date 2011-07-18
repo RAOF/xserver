@@ -1,6 +1,11 @@
 xorg-server (2:1.10.3-1~bpo60+1) UNRELEASED; urgency=low
 
   * Rebuild for squeeze-backports.
+  * Support upgrades from squeeze and to wheezy:
+    - Remove all Breaks on libgl1-mesa-dri*, only needed when multiarch
+      support got added.
+    - Add Provides: xserver-xorg-core-no-multiarch to handle upgrades to
+      wheezy (which has multiarch support).
 
  -- Cyril Brulebois <kibi@debian.org>  Tue, 19 Jul 2011 00:09:47 +0200
 
