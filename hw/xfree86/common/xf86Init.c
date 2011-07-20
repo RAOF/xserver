@@ -908,6 +908,11 @@ InitInput(int argc, char **argv)
 
     mieqInit();
 
+    GetEventList(&xf86Events);
+
+    if (xorgWayland)
+	return;
+
     /* Initialize all configured input devices */
     for (pInfo = xf86ConfigLayout.inputs; pInfo && *pInfo; pInfo++) {
         (*pInfo)->options =
