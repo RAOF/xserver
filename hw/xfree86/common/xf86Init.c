@@ -452,15 +452,6 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
         if (xf86DoShowOptions)
             DoShowOptions();
 
-    /* FIXME: Better to delete drivers that require vt or hw if wayland. */
-    if (xorgWayland) {
-        xorgHWAccess = FALSE;
-        xorgHWOpenConsole = FALSE;
-    }
-
-    /* Do a general bus probe.  This will be a PCI probe for x86 platforms */
-    xf86BusProbe();
-
         /* Do a general bus probe.  This will be a PCI probe for x86 platforms */
         xf86BusProbe();
 
@@ -534,9 +525,6 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
          */
 
         for (i = 0; i < xf86NumDrivers; i++) {
-            if (xf86DriverList[i]->Identify != NULL)
-                xf86DriverList[i]->Identify(0);
-
             if (!xorgHWAccess || !xorgHWOpenConsole) {
                 xorgHWFlags flags;
 
@@ -546,18 +534,21 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
                                                       &flags))
                     flags = HW_IO;
 
+	    if (xorgWayland &&
+		(NEED_IO_ENABLED(flags) || !(flags & HW_SKIP_CONSOLE))) {
+
+		ErrorF("flags %lu, deleting\n", flags);
+
+		xf86DeleteDriver(i);
+		continue;
+	    }
+
                 if (NEED_IO_ENABLED(flags))
                     xorgHWAccess = TRUE;
                 if (!(flags & HW_SKIP_CONSOLE))
                     xorgHWOpenConsole = TRUE;
             }
         }
-
-    /* FIX<E: Better to delete drivers that require vt or hw if hosted. */
-    if (xorgHosted) {
-	xorgHWAccess = FALSE;
-	xorgHWOpenConsole = FALSE;
-    }
 
         if (xorgHWOpenConsole)
             xf86OpenConsole();
