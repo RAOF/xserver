@@ -1,4 +1,4 @@
-xorg-server (2:1.10.3-1~bpo60+1) UNRELEASED; urgency=low
+xorg-server (2:1.10.3-1~bpo60+1) squeeze-backports; urgency=low
 
   * Rebuild for squeeze-backports.
   * Support upgrades from squeeze and to wheezy:
@@ -7,7 +7,7 @@ xorg-server (2:1.10.3-1~bpo60+1) UNRELEASED; urgency=low
     - Add Provides: xserver-xorg-core-no-multiarch to handle upgrades to
       wheezy (which has multiarch support).
 
- -- Cyril Brulebois <kibi@debian.org>  Tue, 19 Jul 2011 00:09:47 +0200
+ -- Cyril Brulebois <kibi@debian.org>  Sun, 14 Aug 2011 13:52:36 +0200
 
 xorg-server (2:1.10.3-1) unstable; urgency=medium
 
