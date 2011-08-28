@@ -1,3 +1,388 @@
+commit e1e3c3ce77fdf173cf0861c61b134e23677bfdf2
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Thu Aug 18 23:49:27 2011 -0700
+
+    configure.ac: Bump version to 1.10.4
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 4597f201dfda94f45387e8c24c76240fb6b23bd7
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Aug 12 15:22:35 2011 -0700
+
+    configure.ac: Bump version to 1.10.3.902 (1.10.4 RC2)
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 02d77caa36e430909a31cb3f3093bcbdbcc272c8
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Thu Apr 21 17:35:55 2011 +1000
+
+    dix: only transform valuators when we need them.
+    
+    Unconditionally drop the valuators back into the mask when they were there
+    in the first place. Otherwise, sending identical coordinates from the driver
+    on a translated device causes the valuator mask to be alternatively
+    overwritten with the translated value or left as-is. This leads to the
+    device jumping around between the translated and the original position.
+    
+    The same could be achieved with a valuator_mask_unset() combination.
+    
+    Testcase:
+    xsetwacom set "device name" MapToOutput VGA1
+    Then press a button on the device, cursor jumps between the two positions.
+    
+    Introduced in 31737fff08ec19b394837341d5e358ec401f5cd8
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Reviewed-by: Chase Douglas <chase.douglas@canonical.com>
+
+commit 8dea7ac25a47f111a1f3779b1809cbb7d28b0584
+Author: Michel Dänzer <michel.daenzer@amd.com>
+Date:   Wed Aug 10 11:36:16 2011 +0200
+
+    EXA/mixed: Update sys_pitch in MPH even when there's no system memory copy.
+    
+    Otherwise sys_pitch will be stale when a system memory copy is allocated.
+    
+    Fixes https://bugs.freedesktop.org/show_bug.cgi?id=38322 and a crash when
+    unlocking the screen with xscreensaver, reported by Janne Huttunen.
+    
+    Signed-off-by: Michel Dänzer <michel.daenzer@amd.com>
+    Tested-by: Janne Huttunen <jahuttun@gmail.com>
+    Tested-by: Jan Kriho <Erbureth@gmail.com>
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    (cherry picked from commit 4020cab88f5cf3164fc83cf912f94f288aa5a45d)
+
+commit 179ab444fde028c82f163994508264b28e9f4f57
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Thu Jul 7 19:18:03 2011 +0200
+
+    Xephyr/dri: register screen and window privates on init
+    
+    Fixes assertion failure when calling dixSetPrivate
+    Debian bug#632549 <http://bugs.debian.org/632549>
+    
+    Reported-and-tested-by: Mohammed Sameer <msameer@foolab.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    (cherry picked from commit a1dec7cd6adabaf8770dc3b21b0df30ce2f0bc8d)
+
+commit fa425363e3927e86d57f42c4b6e4995d26d6bd0c
+Author: Aaron Plattner <aplattner@nvidia.com>
+Date:   Fri Jul 29 16:12:06 2011 -0700
+
+    randr: Compare all the bytes in RRPostPendingProperties
+    
+    RRPostPendingProperties tries to compare the pending and current
+    property values to decide whether they're actually changing.  However,
+    it does this using a memcmp that passes in pending_value->size as the
+    number of bytes.  This is actually the number of elements, where each
+    element is (pending_value->format / 8) bytes long.  This causes the
+    pending value to not be propagated if the first pending_value->size
+    bytes are the same and only the end of it is changing.
+    
+    Fix this by computing the total number of bytes to compare in the
+    memcmp.
+    
+    Signed-off-by: Aaron Plattner <aplattner@nvidia.com>
+    Reviewed-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    (cherry picked from commit 08dfff92e8d0c2b1726634392c147f6634d1706d)
+
+commit 286af43f66b932af142f4299fc06791291641bf9
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Jul 31 21:14:59 2011 +0200
+
+    Xquartz: include new localization files in the tarball
+    
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit e87adcc9e024982fdad974de2876b00cf974dab8)
+
+commit 4fdc6706ca32042edcedc2f831e6f09e1660101b
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Thu Jul 21 10:33:58 2011 -0700
+
+    XQuartz: xpr: Don't FatalError if xp_unlock_window fails
+    
+    We added the FatalError in 5d1d9d9ae39fab2ee2ac085f9776f82768828dc8 but
+    it caused a regression http://xquartz.macosforge.org/trac/ticket/482
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit a1bb5062c72667b2f10b56925c61888acc89e3e4)
+
+commit d97501fffcad67cdc4709514ee98c7b7298df9dc
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Wed Jul 20 00:16:42 2011 -0700
+
+    XQuartz: Use CFSTR to avoid implicit cast warning of NSString * to CFStringRef
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit c319f7b5b3ee651636cdfd165588f0dc972a22a4)
+
+commit eeb9ce746f8d22f5e967b554e2039a6b2d87d305
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Jul 29 11:03:30 2011 -0700
+
+    configure.ac: Bump version to 1.10.3.901 (1.10.4 RC1)
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 50a7361cfcb9ef361afe77e283f4fd2a5b6214f5
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Wed Jul 20 09:00:18 2011 +1000
+
+    Initialize the fd to -1 for xorg.conf input devices.
+    
+    For hotplugged devices, xf86AllocateInput does that for us but the xorg.conf
+    path is different. Since not all drivers reset the fd during PreInit but may
+    still call close(pInfo->fd) in all cases, this can terminate the logging
+    early.
+    
+    Reproducible: add a wacom driver InputDevice section with no Option Device.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    (cherry picked from commit 3798dd379c1ecf325f9907128fb66d20372f6876)
+
+commit 2d94a7d8c2223243fd860bd01f6fdeff91856679
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Jul 4 12:34:32 2011 +1000
+
+    xfree86: NULL option values are technically valid, don't strdup them
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    (cherry picked from commit f2a6735cfc07789cca81852b24a85578f200d83d)
+
+commit f8f6783b9d4bc4106a33e43a1ddb9c0744e2c741
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Jul 4 14:14:39 2011 +1000
+
+    xfree86: duplicate xorg.conf device information before xf86NewInputDevice
+    
+    xf86ConfigLayout.inputs contains the information from the xorg.conf
+    file. Passing this into xf86NewInputDevice means the device will get
+    cleaned up on exit and the pointers in xf86ConfigLayout.inputs are left
+    dangling. In the second server generation, this results in a server
+    crash.
+    
+    Also, rename pDev to pInfo. pDev is pretty much reserved for DeviceIntPtr
+    types.
+    
+    Reproducible: AutoAddDevices off and xorg.conf input sections, trigger
+    server regeneration.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    (cherry picked from commit f0d7e9db28c374a3db359bcb63a7ce79fd84b541)
+
+commit e6336c357251836caa4e76e305c066a363e382f6
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Mon Jun 27 16:30:28 2011 +1000
+
+    xfree86: Remove devices that failed to enable on startup
+    
+    Devices that succeeded during PreInit and DEVICE_INIT but failed in
+    DEVICE_ON would be deleted through xf86DeleteInput but not removed from the
+    list of input devices (and not turned off). The result was a double free on
+    server shutdown.
+    
+    Fix this by calling RemoveDevice if EnableDevice fails.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    (cherry picked from commit 8ffddbcf72170e246826ee0f39f18989a29fa218)
+
+commit a0b8dacbc016e38c92300ed421850e11848b8454
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Tue Jul 19 23:46:10 2011 -0700
+
+    XQuartz: Adjust BUNDLE_ID_PREFIX to LAUNCHD_ID_PREFIX for server-1.10-branch
+    
+    Default builds will fail due to BUNDLE_ID_PREFIX not being defined.  LAUNCHD_ID_PREFIX
+    was used in 1.10.x and earlier.
+    
+    This was fallout from 55ef10975e2e543ff99f7a75dd65722dc96ff873.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit 9b02eb8df6e991d162281e1a8d123b8ac9847d5e
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Tue Jul 19 20:03:48 2011 -0700
+
+    XQuartz: Localization updates
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit 73864a87aacbce85b520ccaa6e360b82c0e99716)
+
+commit e924b2c48320d11c25fae00954739368152df094
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Tue Jul 19 20:02:33 2011 -0700
+
+    XQuartz: Add english NIB changes for scroll_in_device_direction
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit d2463df84d3a160b2dd1e706b02985e1817784e3)
+
+commit 1840c374072d8290e3caa7b3cd8d223449938b62
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Tue Jul 19 20:01:11 2011 -0700
+
+    XQuartz: Add GUI controls to toggle scroll_in_device_direction
+    
+    Also cleaned up the wording for fullscreen_menu.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit e36e7ad6314ca5fcd3292b8022f0a618d567d72b)
+
+commit 46b7abb432bcd03b80110465d5be35d9dbc03c85
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Tue Jul 19 20:00:27 2011 -0700
+
+    XQuartz: Add a scroll_in_device_direction preference
+    
+    This preference allows users to override the related option in Mac OS X's
+    Mouse/Trackpad preferences.  This effectively lets the user determine
+    which "context" all of X11 fits into for context-based scrolling until
+    such API exists within X11 itself to pass along to X11 clients.
+    
+    This is applicable to Mav OS X 10.7+
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit ac43984215faf464fd48bd006cac1c6539603cea)
+
+commit 1d8bbdc3b81cc002b3d9ce4ce5746807e7b1c681
+Author: George Staplin <gstaplin@apple.com>
+Date:   Wed Mar 4 02:03:52 2009 -0700
+
+    XQuartz: Add diagnostic error checking to xp_destroy_surface.
+    
+    This occurred to me in hindsight after the last commit.  If the
+    original developer had done this, we would have noticed the
+    problem sooner.
+    (cherry picked from commit aa0a57996f3e7d16238f69976958c2526821388b)
+    (cherry picked from commit ec95a9c829b8e37529aa828c05fbaabc45cffe42)
+
+commit d0bb22ed78cccbd73841b83ebed80ad286ee6e1d
+Author: George Staplin <gstaplin@apple.com>
+Date:   Wed Mar 4 01:39:58 2009 -0700
+
+    XQuartz: Fix a memory leak with surfaces that a new test found.
+    
+    xp_destroy_surface was called with a surface id of 0, due to some
+    premature cleanup that set it to 0.  This means the surfaces
+    weren't being destroyed until the window was.
+    
+    The code that did that was: pDRIDrawablePriv->sid = 0;
+    
+    In long running applications this leak may or may not have been
+    harmful.  With the old libGL the surfaces weren't destroyed until
+    the context was destroyed or a new context created.  In the new
+    libGL they are reference counted, and released much sooner, so we
+    ran into a resource leak more noticeably with some tests.
+    
+    Make the Apple DRI code dispatch events to the client(s) for
+    destroyed surfaces, when a resource is destroyed.  This seems to
+    work in my tests, however this clearly wasn't working for a while,
+    so bugs may result in the future if it enables some new (unexpected)
+    side effects.
+    
+    Also add a few helpful comments to aid in understanding the code
+    in the future.
+    
+    Tested with the test suite, Pymol, and various Mesa demos.
+    (cherry picked from commit bede83eb19a1629396fcd5a46441f8476a8fcd1b)
+    (cherry picked from commit 4fe7df265324f63025686efe9d32342e3cef40d3)
+
+commit 50ec4a25b66611c4f864fb7fb30065ab575a1d85
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Tue Jul 19 19:42:44 2011 -0700
+
+    XQuartz: DRI: Dead code removal
+    
+    Also add some comments that weren't merged in from server-1.4-apple's
+    99babae1326485c27eb9253db83afdd6aef9e362
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit 0ebe45a717faa6464d3b1ab73e30570518ee4798)
+
+commit 55ef10975e2e543ff99f7a75dd65722dc96ff873
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Mon Jul 18 22:54:21 2011 -0700
+
+    XQuartz: Add some sanity checking and a fallback for the bundle id.
+    
+    This way we'll print an error and still mostly work rather than crashing if
+    someone installs XQuartz.app incorrectly or tries running the server within
+    the build system rather than the installed system.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit 88ad050f3c2f9f11bafb56a8cf777518795295a9)
+
+commit 64ea1ac3208155e8caf740f0b6623997dca0bf69
+Author: Jon TURNEY <jon.turney@dronecode.org.uk>
+Date:   Mon Jan 24 18:29:41 2011 +0000
+
+    glx: Remove a few lingering traces of __GLXscreen.GLXVersion
+    
+    The GLXversion member of the __GLXscreen struct
+    is just cruft since commit ad5c0d9efa47476ed5cf75c82265c73919e468b4,
+    when we started returning the minimum GLX version supported by all
+    of the screens on the display, rather than the maximum version supported
+    by the server.
+    
+    Reviewed-by: Jeremy Huddleston <jeremyhu@apple.com>
+    Signed-off-by: Jon TURNEY <jon.turney@dronecode.org.uk>
+    (cherry picked from commit 42bc198775a78b328612427c4c8ed4d17e005ae9)
+
+commit afb537d56af9a037c4f43d90795fb7e9acb7f9d2
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Jun 24 11:02:23 2011 +1000
+
+    input: add POINTER_NORAW to avoid generation of raw events (#30068)
+    
+    RawEvents are supposed to be events coming from the driver. When warping the
+    pointer, this should not generate a raw event.
+    
+    X.Org Bug 30068 <http://bugs.freedesktop.org/show_bug.cgi?id=30068>
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    (cherry picked from commit 23a783278963919778d017965542e0f983814e37)
+    
+    Conflicts:
+    
+    	dix/getevents.c
+
+commit 6b06f376544f222e426f0a35d22d69df0c523882
+Author: Adam Jackson <ajax@redhat.com>
+Date:   Tue Apr 12 15:30:25 2011 -0400
+
+    glx: Fix fbconfigs with no corresponding visual
+    
+    There are, in general, more fbconfig depths than visual depths.
+    fbconfigs need not support Window rendering, however any that do must
+    have an associated visual ID (which we got right), and any that do not
+    must not claim GLX_WINDOW_BIT in GLX_DRAWABLE_TYPE (which we got
+    wrong).
+    
+    Fixes piglit/glx-fbconfig-sanity, assuming you have a sufficiently
+    recent piglit, as that test formerly wrongly required pixmap-capable
+    fbconfigs to have a visual.
+    
+    v2: Additional check for fbconfigs that didn't have GLX_WINDOW_BIT in
+        the first place, from previous patch by Jon TURNEY; also, also clear
+        ->visualID.
+    
+    Reviewed-by: Jon TURNEY <jon.turney@dronecode.org.uk>
+    Signed-off-by: Adam Jackson <ajax@redhat.com>
+    (cherry picked from commit 3e8270b869ebf788778d5d56107f6d47c7c050d0)
+
 commit c9be51523af53742dd7475b73ab151867056d91e
 Author: Jeremy Huddleston <jeremyhu@apple.com>
 Date:   Fri Jul 8 12:12:16 2011 -0700
