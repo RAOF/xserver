@@ -1,3 +1,13 @@
+xorg-server (2:1.7.7-14) UNRELEASED; urgency=low
+
+  * GLX: add missing input sanitization (CVE-2010-4818).  Also fix a couple
+    swapping issues.
+  * File disclosure vulnerability (CVE-2011-4028).
+  * File permission change vulnerability (CVE-2011-4029).
+  * xf86ScaleAxis: support for high resolution devices.
+
+ -- Julien Cristau <jcristau@debian.org>  Fri, 21 Oct 2011 20:56:40 +0200
+
 xorg-server (2:1.7.7-13) stable; urgency=low
 
   * bug script: Report KMS configuration files and their contents.

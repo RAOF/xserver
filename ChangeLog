@@ -1,3 +1,208 @@
+commit 03ff880e8bf20cdecaf27f03391ea31545ecc22c
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Mon Oct 17 22:27:35 2011 +0200
+
+    Fix CVE-2011-4029: File permission change vulnerability.
+    
+    Use fchmod() to change permissions of the lock file instead
+    of chmod(), thus avoid the race that can be exploited to set
+    a symbolic link to any file or directory in the system.
+    
+    Signed-off-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    (cherry picked from commit b67581cf825940fdf52bf2e0af4330e695d724a4)
+    (cherry picked from commit 12f65819ffb04103f170ecd7e281348de618fc4c)
+
+commit 3394ae378da567025ac94a2c2ff04f2a0b113962
+Author: Matthieu Herrb <matthieu.herrb@laas.fr>
+Date:   Mon Oct 17 22:26:12 2011 +0200
+
+    Fix CVE-2011-4028: File disclosure vulnerability.
+    
+    use O_NOFOLLOW to open the existing lock file, so symbolic links
+    aren't followed, thus avoid revealing if it point to an existing
+    file.
+    
+    Signed-off-by: Matthieu Herrb <matthieu.herrb@laas.fr>
+    Reviewed-by: Alan Coopersmith <alan.coopersmith@oracle.com>
+    (cherry picked from commit 6ba44b91e37622ef8c146d8f2ac92d708a18ed34)
+    (cherry picked from commit f80d23357874db19bc124dee70239fb182977883)
+
+commit 656307e93a7c72b147805e3741ebb02baf876150
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Jan 23 13:35:54 2011 +0100
+
+    glx: Work around wrong request lengths sent by mesa
+    
+    mesa used to send too long requests for GLXDestroyPixmap,
+    GLXDestroyWindow, GLXChangeDrawableAttributes, GLXGetDrawableAttributes
+    and GLXGetFBConfigsSGIX.
+    
+    Fixes a regression introduced in ec9c97c6bf70b523bc500bd3adf62176f1bb33a4
+    X.Org bug#33324 <https://bugs.freedesktop.org/show_bug.cgi?id=33324>
+    
+    Reported-by: xunx.fang@intel.com
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Adam Jackson <ajax@redhat.com>
+    (cherry picked from commit 402b329c3aa8ddbebaa1f593306a02d4cd6fed26)
+
+commit c821bd84e594e86d5dd766f680064e88a29a10d1
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Wed Jan 26 13:06:53 2011 +0100
+
+    glx: fix BindTexImageEXT length check
+    
+    The request is followed by a list of attributes.
+    
+    X.Org bug#33449
+    
+    Reported-and-tested-by: meng <mengmeng.meng@intel.com>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Adam Jackson <ajax@redhat.com>
+    (cherry picked from commit 1137c11be0f82049d28024eaf963c6f76e0d4334)
+
+commit 5b76d710d3cebbfb8a5f02eaa7920f73deadff21
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Jan 23 17:05:26 2011 +0100
+
+    glx: fix request length check for CreateGLXPbufferSGIX
+    
+    The request is followed by an attribute list.
+    
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    Reviewed-by: Adam Jackson <ajax@redhat.com>
+    (cherry picked from commit a883cf1545abd89bb2cadfa659718884b56fd234)
+
+commit 7ed56f793fe9bfe1fd2b70157523952cf6070fd8
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Wed Nov 10 22:39:54 2010 +0100
+
+    glx: validate numAttribs field before using it
+    
+    Reviewed-by: Kristian Høgsberg <krh@bitplanet.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    (cherry picked from commit d9225b9602c85603ae616a7381c784f5cf5e811c)
+
+commit 4f6ee6177c76d480fe2c477b0ca19ad337928373
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Aug 22 16:20:45 2010 +0100
+
+    glx: swap the request arrays entirely, not just half of them
+    
+    Various glx requests include a list of pairs of attributes.  We were
+    only swapping the first half.
+    
+    Reviewed-by: Kristian Høgsberg <krh@bitplanet.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    (cherry picked from commit 62319e8381ebd645ae36b25e5fc3c0e9b098387b)
+
+commit 00130263a222de904a4500c5410706aa5ec693dc
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sun Aug 22 00:50:05 2010 +0100
+
+    glx: check request length before swapping
+    
+    Reviewed-by: Kristian Høgsberg <krh@bitplanet.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    (cherry picked from commit 6c69235a9dfc52e4b4e47630ff4bab1a820eb543)
+
+commit 6ff0bcfcc0eb02640456beacaaa93ee762c84507
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sat Jul 3 19:47:55 2010 +0100
+
+    glx: validate request lengths
+    
+    Reviewed-by: Adam Jackson <ajax@redhat.com>
+    Reviewed-by: Kristian Høgsberg <krh@bitplanet.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    (cherry-picked from commit ec9c97c6bf70b523bc500bd3adf62176f1bb33a4)
+
+commit 94458a6e09761e3b7937bb639ea4c12972328c7f
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Sun Mar 13 15:10:00 2011 -0700
+
+    XQuartz GL: Add $(GL_CFLAGS) to CFLAGS
+    
+    This fixes a build failure I found on tinderbox.
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+    (cherry picked from commit f641e4b34aa91ecda29e546b8b975e72ce037ed0)
+    
+    Conflicts:
+    
+    	hw/xquartz/GL/Makefile.am
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit ee8664ee8573d810a8768a2e10dd896b630697ff
+Author: Benjamin Tissoires <tissoire@cena.fr>
+Date:   Wed Apr 14 17:27:51 2010 +0200
+
+    xf86ScaleAxis: support for high resolution devices
+    
+    High resolution devices was generating integer overflow.
+    For instance the wacom Cintiq 21UX has an axis value up to
+    87000. Thus the term (dSx * (Cx - Rxlow)) is greater than
+    MAX_INT32.
+    
+    Using 64bits integer avoids such problem.
+    
+    Signed-off-by: Philippe Ribet <ribet@cena.fr>
+    Signed-off-by: Benjamin Tissoires <tissoire@cena.fr>
+    Reviewed-by: Keith Packard <keithp@keithp.com>
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    (cherry picked from commit a780e5b3638a0ff81301fc68aca15b47ba0befb7)
+
+commit 01bc98e313b8ee62c506d0f8f408d54b71d1dfa6
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Sat Jul 3 19:42:26 2010 +0100
+
+    glx: make sure screen is non-negative in validGlxScreen
+    
+    Reviewed-by: Adam Jackson <ajax@redhat.com>
+    Reviewed-by: Kristian Høgsberg <krh@bitplanet.net>
+    Reviewed-by: Daniel Stone <daniel@fooishbar.org>
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+    (cherry picked from commit 3f0d3f4d97bce75c1828635c322b6560a45a037f)
+
+commit d77ffa918b2aaa3ca1deb17ed0145199d0f863da
+Author: Julien Cristau <jcristau@debian.org>
+Date:   Mon Jan 31 14:14:47 2011 +0100
+
+    Revert "randr: check for virtual size limits before set crtc"
+    
+    Apparently these checks break rotation with the nvidia drivers:
+    https://bbs.archlinux.org/viewtopic.php?pid=877761
+    http://bugs.debian.org/611619
+    Let's not do that in a stable branch.
+    
+    This reverts commit 6a6d907e77777057cadbd80572119c09732385cd.
+    
+    Signed-off-by: Julien Cristau <jcristau@debian.org>
+
+commit 5549d99acbc38c8a1f12d649c42f044392ec7af0
+Author: Peter Hutterer <peter.hutterer@who-t.net>
+Date:   Fri Sep 3 11:54:41 2010 +1000
+
+    mi: handle DGA subtypes when determining the master device.
+    
+    The subtype in the DGA event is the core type and all ET_ event types (where
+    applicable) are identical to the core types. Thus the switch statement below
+    will work as required and assign the right master device.
+    
+    Fixes a crasher bug on keyboard devices with valuators. If a device sends a
+    motion event while grabbed and a DGA client is active (but has not selected
+    input through DGA), the valuator event is posted through the VCK and
+    eventually results in a NULL-pointer dereference on dev->valuator.
+    
+    Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+    (cherry picked from commit 31ab9f8860848504df18a8be9d19b817b191e0df)
+    (cherry picked from commit faecab3b13bbaecf4f35f49b833d1b79a5fb647d)
+
 commit 2fd67c34549f1703e8ca522f92be518b18f90e81
 Author: Ville Syrjälä <ville.syrjala@nokia.com>
 Date:   Thu Dec 16 18:22:13 2010 +0200
