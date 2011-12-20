@@ -1,3 +1,25 @@
+commit 41524dd61020f2a446ec54643fa17aa791338cac
+Author: Jeremy Huddleston <jeremyhu@apple.com>
+Date:   Fri Dec 16 17:47:46 2011 -0800
+
+    configure.ac: 1.11.3
+    
+    Signed-off-by: Jeremy Huddleston <jeremyhu@apple.com>
+
+commit ee66474eb2009118a41539c6773e514a09d27e4d
+Author: Gaetan Nadon <memsize@videotron.ca>
+Date:   Fri Dec 9 07:45:02 2011 -0500
+
+    dmx: fix distcheck failure, missing compsize.h in Makefile.am
+    
+    which was added in commit:
+    dmx: Build fix for -Werror=implicit-function-declaration
+    
+    Reviewed-by: Peter Hutterer <peter.hutterer@who-t.net>
+    Signed-off-by: Gaetan Nadon <memsize@videotron.ca>
+    Signed-off-by: Keith Packard <keithp@keithp.com>
+    (cherry picked from commit 2c1d0a539c0fb1860ac89a00d1fb609f1959e1b6)
+
 commit 0ca8869e4537412f25bfd5610aba5e604952608c
 Author: Jeremy Huddleston <jeremyhu@apple.com>
 Date:   Fri Dec 9 12:58:30 2011 -0800
