@@ -2005,9 +2005,13 @@ void
 SetDeviceRedirectWindow(DeviceIntPtr dev, WindowPtr window)
 {
     SpritePtr pSprite = dev->spriteInfo->sprite;
+    DeviceIntPtr mouse;
+
+    mouse = (IsMaster(dev) || dev->u.master) ? GetMaster(dev, MASTER_POINTER) : dev;
 
     pSprite->redirectWindow = window;
-    CheckMotion(NULL, dev);
+
+    CheckMotion(NULL, mouse);
 }
 
 int
