@@ -26,8 +26,8 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ(2.57)
-AC_INIT([xorg-server], 1.11.3, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], xorg-server)
-RELEASE_DATE="2011-12-16"
+AC_INIT([xorg-server], 1.11.3.901, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], xorg-server)
+RELEASE_DATE="2012-01-06"
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
@@ -2029,12 +2029,10 @@ if test "$KDRIVE" = yes; then
         XEPHYR_REQUIRED_LIBS="$XEPHYR_REQUIRED_LIBS $LIBGL libdrm"
     fi
 
-    PKG_CHECK_MODULES(XEPHYR, $XEPHYR_REQUIRED_LIBS, [xephyr="yes"], [xephyr="no"])
     if test "x$XEPHYR" = xauto; then
-        XEPHYR=$xephyr
-    fi
-    if test "x$XEPHYR" = xyes && test "x$xephyr" = xno; then	
-        AC_MSG_ERROR([Xephyr dependencies missing])
+        PKG_CHECK_MODULES(XEPHYR, $XEPHYR_REQUIRED_LIBS, [XEPHYR="yes"], [XEPHYR="no"])
+    elif test "x$XEPHYR" = xyes ; then
+        PKG_CHECK_MODULES(XEPHYR, $XEPHYR_REQUIRED_LIBS)
     fi
 
     # Xephyr needs nanosleep() which is in librt on Solaris
