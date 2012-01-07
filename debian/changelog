@@ -1,10 +1,10 @@
-xorg-server (2:1.11.3.901-1) UNRELEASED; urgency=low
+xorg-server (2:1.11.3.901-1) unstable; urgency=low
 
   * New upstream release candidate (1.11.4 RC1):
     - Fix ShmPutImage for XYBitmap (Closes: #629611). Many thanks
       to Alan Curry again.
 
- -- Cyril Brulebois <kibi@debian.org>  Sat, 07 Jan 2012 22:21:05 +0100
+ -- Cyril Brulebois <kibi@debian.org>  Sat, 07 Jan 2012 22:25:44 +0100
 
 xorg-server (2:1.11.2.902-1) unstable; urgency=low
 
