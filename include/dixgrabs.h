@@ -28,9 +28,6 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 struct _GrabParameters;
 
-extern void PrintDeviceGrabInfo(DeviceIntPtr dev);
-extern void UngrabAllDevices(Bool kill_client);
-
 extern GrabPtr CreateGrab(
 	int /* client */,
 	DeviceIntPtr /* device */,
