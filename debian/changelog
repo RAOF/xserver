@@ -1,3 +1,11 @@
+xorg-server (2:1.11.3.901-2) UNRELEASED; urgency=low
+
+  * Revert "XKB: Add debug key actions for grabs & window tree" to stop
+    making it possible to bypass X screen locking programs. This is
+    CVE-2012-0064 (Closes: #656410).
+
+ -- Cyril Brulebois <kibi@debian.org>  Thu, 19 Jan 2012 10:34:53 +0100
+
 xorg-server (2:1.11.3.901-1) unstable; urgency=low
 
   * New upstream release candidate (1.11.4 RC1):
