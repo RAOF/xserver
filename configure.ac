@@ -26,8 +26,8 @@ dnl
 dnl Process this file with autoconf to create configure.
 
 AC_PREREQ(2.57)
-AC_INIT([xorg-server], 1.11.3.901, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], xorg-server)
-RELEASE_DATE="2012-01-06"
+AC_INIT([xorg-server], 1.11.4, [https://bugs.freedesktop.org/enter_bug.cgi?product=xorg], xorg-server)
+RELEASE_DATE="2012-01-27"
 AC_CONFIG_SRCDIR([Makefile.am])
 AM_INIT_AUTOMAKE([foreign dist-bzip2])
 AM_MAINTAINER_MODE
@@ -998,6 +998,13 @@ if test "x$RES" = xyes && test "x$CLIENTIDS" = xyes; then
 	AC_DEFINE(CLIENTIDS, 1, [Support client ID tracking])
 else
 	CLIENTIDS=no
+fi
+if test "x$CLIENTIDS" = xyes; then
+	case $host_os in
+	openbsd*)
+		SYS_LIBS="$SYS_LIBS -lkvm"
+	;;
+	esac
 fi
 AC_MSG_RESULT([$CLIENTIDS])
 AM_CONDITIONAL(CLIENTIDS, [test "x$CLIENTIDS" = xyes])
