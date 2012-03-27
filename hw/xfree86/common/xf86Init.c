@@ -908,8 +908,6 @@ InitInput(int argc, char **argv)
 
     mieqInit();
 
-    GetEventList(&xf86Events);
-
     if (xorgWayland)
 	return;
 
