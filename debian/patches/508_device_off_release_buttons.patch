@@ -1,0 +1,37 @@
+From adaf1adecf5697455e9f3fb0234939113873f959 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Mon, 30 Apr 2012 10:01:48 +1000
+Subject: [PATCH] dix: when disabling a device, release all buttons and keys
+
+A suspend-induced device disable may happen before the device gets to see
+the button release event. On resume, the server's internal state still has
+some buttons pressed, causing inconsistent behaviour.
+
+Force the release and the matching events to be sent to the client.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Chase Douglas <chase.douglas@canonical.com>
+
+Conflicts:
+
+	dix/devices.c
+---
+ dix/devices.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/dix/devices.c b/dix/devices.c
+index 9624424..b325d17 100644
+--- a/dix/devices.c
++++ b/dix/devices.c
+@@ -447,6 +447,8 @@ DisableDevice(DeviceIntPtr dev, BOOL sendevent)
+     if (*prev != dev)
+ 	return FALSE;
+ 
++    ReleaseButtonsAndKeys(dev);
++
+     /* float attached devices */
+     if (IsMaster(dev))
+     {
+-- 
+1.7.9.1
+

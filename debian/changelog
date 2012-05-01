@@ -1,3 +1,10 @@
+xorg-server (2:1.11.4-0ubuntu10.2) UNRELEASED; urgency=low
+
+  * Release buttons when device is disabled on suspend (LP: #968845)
+    - Add temporary patch 508_device_off_release_buttons.patch from upstream
+
+ -- Chase Douglas <chase.douglas@ubuntu.com>  Tue, 01 May 2012 13:59:15 -0700
+
 xorg-server (2:1.11.4-0ubuntu10.1) precise-proposed; urgency=low
 
   [ Bryce Harrington ]

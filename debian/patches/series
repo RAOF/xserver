@@ -36,3 +36,4 @@
 505_query_pointer_touchscreen.patch
 506_touchscreen_pointer_emulation_checks.patch
 507_touchscreen_fixes.patch
+508_device_off_release_buttons.patch
