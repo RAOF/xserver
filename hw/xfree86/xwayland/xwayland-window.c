@@ -42,8 +42,9 @@
 #include "xwayland.h"
 #include "xwayland-private.h"
 #include "xserver-client-protocol.h"
+#include "system-compositor-client-protocol.h"
 
-static DevPrivateKeyRec xwl_window_private_key;
+DevPrivateKeyRec xwl_window_private_key;
 
 static void
 free_pixmap(void *data, struct wl_callback *callback, uint32_t time)
@@ -201,7 +202,7 @@ xwl_realize_window(WindowPtr window)
 
     dixSetPrivate(&window->devPrivates,
 		  &xwl_window_private_key, xwl_window);
-
+    
     xwl_window->damage =
 	DamageCreate(damage_report, damage_destroy, DamageReportNonEmpty,
 		     FALSE, screen, xwl_window);

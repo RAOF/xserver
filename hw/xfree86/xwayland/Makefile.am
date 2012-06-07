@@ -26,7 +26,9 @@ libxwayland_la_SOURCES =			\
 	drm-client-protocol.h			\
 	drm-protocol.c				\
 	xserver-client-protocol.h		\
-	xserver-protocol.c
+	xserver-protocol.c			\
+	system-compositor-client-protocol.h	\
+	system-compositor-protocol.c
 
 if DRM
 libxwayland_la_SOURCES += xwayland-drm.c
@@ -38,7 +40,9 @@ BUILT_SOURCES =					\
 	drm-client-protocol.h			\
 	drm-protocol.c				\
 	xserver-client-protocol.h		\
-	xserver-protocol.c
+	xserver-protocol.c			\
+	system-compositor-client-protocol.h	\
+	system-compositor-protocol.c
 
 CLEANFILES = $(BUILT_SOURCES)
 

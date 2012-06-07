@@ -47,6 +47,7 @@ struct xwl_screen {
     struct xwl_output		*xwl_output;
     struct wl_display		*display;
     struct wl_compositor	*compositor;
+    struct wl_system_compositor *system_compositor;
     struct wl_global_listener   *global_listener;
     struct wl_global_listener   *drm_listener;
     struct wl_global_listener   *input_listener;

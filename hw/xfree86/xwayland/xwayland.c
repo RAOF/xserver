@@ -45,6 +45,7 @@
 #include "xwayland.h"
 #include "xwayland-private.h"
 #include "xserver-client-protocol.h"
+#include "system-compositor-client-protocol.h"
 
 /*
  * TODO:
@@ -54,6 +55,8 @@
 
 static DevPrivateKeyRec xwl_screen_private_key;
 static Atom xdnd_atom;
+
+DevPrivateKeyRec xwl_window_private_key;
 
 static void
 xserver_client(void *data, struct xserver *xserver, int fd)
@@ -112,6 +115,10 @@ global_handler(struct wl_display *display,
     } else if (strcmp (interface, "wl_shm") == 0) {
         xwl_screen->shm = wl_display_bind(xwl_screen->display,
 					  id, &wl_shm_interface);
+    } else if (strcmp (interface, "wl_system_compositor") == 0) {
+	xwl_screen->system_compositor =
+	        wl_display_bind(xwl_screen->display, 
+				id, &wl_system_compositor_interface);
     }
 }
 
@@ -146,6 +153,38 @@ block_handler(pointer data, struct timeval **tv, pointer read_mask)
 	wl_display_iterate(xwl_screen->display, WL_DISPLAY_WRITABLE);
 }
 
+Bool
+xwayland_ready_queue_proc(ClientPtr unused, pointer closure)
+{
+    struct xwl_screen *xwl_screen = closure;
+
+    if (xwl_screen->screen->root == NULL) {
+         /* This should only ever be called once the server has finished
+          * initialisation and on a server with a root window.
+          *
+          * A bit of paranoia isn't unjustified
+          */
+        xf86Msg(X_INFO, "Root window not yet set, delaying ready signal\n");
+        return FALSE;
+    }
+    
+    struct xwl_window *xwl_window = 
+            dixLookupPrivate(&xwl_screen->screen->root->devPrivates,
+			     &xwl_window_private_key);
+    if (xwl_window == NULL) {
+        xf86Msg(X_ERROR, "Failed to get root pixmap's xwl_window\n");
+	return TRUE;
+    }
+
+    wl_system_compositor_present_surface(xwl_screen->system_compositor,
+					 xwl_window->surface,
+					 xwl_screen->xwl_output->output);
+    wl_system_compositor_ready(xwl_screen->system_compositor);
+
+    /* We only need to do this once, dump us from the work queue */
+    return TRUE;
+}
+
 int
 xwl_screen_init(struct xwl_screen *xwl_screen, ScreenPtr screen)
 {
@@ -168,6 +207,10 @@ xwl_screen_init(struct xwl_screen *xwl_screen, ScreenPtr screen)
 
     callback = wl_display_sync(xwl_screen->display);
     wl_callback_add_listener(callback, &delayed_init_listner, xwl_screen);
+
+    if (xwl_screen->system_compositor &&
+	!(xwl_screen->flags & XWL_FLAGS_ROOTLESS))
+        QueueWorkProc(xwayland_ready_queue_proc, NULL, xwl_screen);
 
     return Success;
 }
