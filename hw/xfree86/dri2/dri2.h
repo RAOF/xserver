@@ -63,7 +63,7 @@ typedef void (*DRI2CopyRegionProcPtr) (DrawablePtr pDraw,
                                        DRI2BufferPtr pDestBuffer,
                                        DRI2BufferPtr pSrcBuffer);
 typedef void (*DRI2WaitProcPtr) (WindowPtr pWin, unsigned int sequence);
-typedef int (*DRI2AuthMagicProcPtr) (int fd, uint32_t magic);
+typedef int (*DRI2AuthMagicProcPtr) (ScreenPtr pScreen, int fd, uint32_t magic);
 
 /**
  * Schedule a buffer swap
@@ -178,7 +178,7 @@ typedef Bool (*DRI2SwapLimitValidateProcPtr) (DrawablePtr pDraw,
 /**
  * Version of the DRI2InfoRec structure defined in this header
  */
-#define DRI2INFOREC_VERSION 6
+#define DRI2INFOREC_VERSION 7
 
 typedef struct {
     unsigned int version;       /**< Version of this struct */

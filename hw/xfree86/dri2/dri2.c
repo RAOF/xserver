@@ -89,6 +89,8 @@ typedef struct _DRI2Drawable {
     Bool needInvalidate;
 } DRI2DrawableRec, *DRI2DrawablePtr;
 
+typedef int (*DRI2LegacyAuthMagicProcPtr) (int fd, uint32_t magic);
+
 typedef struct _DRI2Screen {
     ScreenPtr screen;
     int refcnt;
@@ -105,6 +107,7 @@ typedef struct _DRI2Screen {
     DRI2GetMSCProcPtr GetMSC;
     DRI2ScheduleWaitMSCProcPtr ScheduleWaitMSC;
     DRI2AuthMagicProcPtr AuthMagic;
+    DRI2LegacyAuthMagicProcPtr LegacyAuthMagic;
     DRI2ReuseBufferNotifyProcPtr ReuseBufferNotify;
     DRI2SwapLimitValidateProcPtr SwapLimitValidate;
 
@@ -1109,12 +1112,22 @@ DRI2Connect(ScreenPtr pScreen, unsigned int driverType, int *fd,
     return TRUE;
 }
 
+static Bool
+DRI2AuthMagic (ScreenPtr pScreen, int fd, uint32_t magic)
+{
+    DRI2ScreenPtr ds = DRI2GetScreen(pScreen);
+    if (ds == NULL || (*ds->LegacyAuthMagic) (ds->fd, magic))
+        return FALSE;
+
+    return TRUE;
+}
+
 Bool
 DRI2Authenticate(ScreenPtr pScreen, uint32_t magic)
 {
     DRI2ScreenPtr ds = DRI2GetScreen(pScreen);
 
-    if (ds == NULL || (*ds->AuthMagic) (ds->fd, magic))
+    if (ds == NULL || (*ds->AuthMagic) (pScreen, ds->fd, magic))
         return FALSE;
 
     return TRUE;
@@ -1201,8 +1214,16 @@ DRI2ScreenInit(ScreenPtr pScreen, DRI2InfoPtr info)
         cur_minor = 1;
     }
 
-    if (info->version >= 5) {
+    if (info->version >= 7) {
         ds->AuthMagic = info->AuthMagic;
+    }
+    else if (info->version >= 5) {
+        /*
+         * This cast is safe; if the driver has provided a V5 or V6 InfoRec
+         * then AuthMagic is of type DRI2LegacyAuthMagicProcPtr, and the C
+         * standard guarantees that we can typecast it back and call it.
+         */
+        ds->LegacyAuthMagic = (DRI2LegacyAuthMagicProcPtr)info->AuthMagic;
     }
 
     if (info->version >= 6) {
@@ -1212,14 +1233,21 @@ DRI2ScreenInit(ScreenPtr pScreen, DRI2InfoPtr info)
 
     /*
      * if the driver doesn't provide an AuthMagic function or the info struct
-     * version is too low, it relies on the old method (using libdrm) or fail
+     * version is too low, call through LegacyAuthMagic
      */
-    if (!ds->AuthMagic)
+    if (!ds->AuthMagic) {
+        ds->AuthMagic = DRI2AuthMagic;
+        /*
+         * If the driver doesn't provide an AuthMagic function
+         * it relies on the old method (using libdrm) or fails
+         */
+        if (!ds->LegacyAuthMagic)
 #ifdef WITH_LIBDRM
-        ds->AuthMagic = drmAuthMagic;
+            ds->LegacyAuthMagic = drmAuthMagic;
 #else
-        goto err_out;
+            goto err_out;
 #endif
+    }
 
     /* Initialize minor if needed and set to minimum provied by DDX */
     if (!dri2_minor || dri2_minor > cur_minor)
