@@ -1,0 +1,41 @@
+From e433d1046c222f9d969c2c28a4651ff9097614f4 Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 10 May 2012 12:42:59 +1000
+Subject: [PATCH 10/12] dix: disable non-sprite-owners first when disabling
+ paired devices
+
+If a sprite-owner is to be disabled but still paired, disable the paired
+device first. i.e. disabling a master pointer will disable the master
+keyboard first.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Chase Douglas <chase.douglas@canonical.com>
+---
+Altered to apply to stable
+
+ dix/devices.c |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/dix/devices.c
++++ b/dix/devices.c
+@@ -477,15 +477,14 @@
+     {
+         for (other = inputInfo.devices; other; other = other->next)
+         {
+-            if (other->spriteInfo->paired == dev)
+-            {
+-                ErrorF("[dix] cannot disable device, still paired. "
+-                        "This is a bug. \n");
+-                return FALSE;
+-            }
++            if (other->spriteInfo->paired == dev && !other->spriteInfo->spriteOwner)
++                DisableDevice(other, sendevent);
+         }
+     }
+ 
++    if (dev->spriteInfo->paired)
++        dev->spriteInfo->paired = NULL;
++
+     (void)(*dev->deviceProc)(dev, DEVICE_OFF);
+     dev->enabled = FALSE;
+ 

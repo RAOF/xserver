@@ -37,3 +37,11 @@
 506_touchscreen_pointer_emulation_checks.patch
 507_touchscreen_fixes.patch
 508_device_off_release_buttons.patch
+
+# Upstream patches
+510-dix-return-early-from-DisableDevice-if-the-device-is.patch
+511-dix-move-freeing-the-sprite-into-a-function.patch
+512-dix-free-the-sprite-when-disabling-the-device.patch
+513-dix-disable-non-sprite-owners-first-when-disabling-p.patch
+514-Xi-drop-forced-unpairing-when-changing-the-hierarchy.patch
+515-dix-disable-all-devices-before-shutdown.patch

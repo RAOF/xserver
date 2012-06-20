@@ -1,0 +1,62 @@
+From e57d6a89027c55fef987cdc259668c48a8b4ea1b Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 10 May 2012 15:32:20 +1000
+Subject: [PATCH 08/12] dix: move freeing the sprite into a function
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Chase Douglas <chase.douglas@canonical.com>
+---
+ dix/devices.c |    7 +------
+ dix/events.c  |   12 ++++++++++++
+ include/dix.h |    2 ++
+ 3 files changed, 15 insertions(+), 6 deletions(-)
+
+--- a/dix/devices.c
++++ b/dix/devices.c
+@@ -949,12 +949,7 @@
+ 	free(classes);
+     }
+ 
+-    if (DevHasCursor(dev) && dev->spriteInfo->sprite) {
+-	if (dev->spriteInfo->sprite->current)
+-	    FreeCursor(dev->spriteInfo->sprite->current, None);
+-        free(dev->spriteInfo->sprite->spriteTrace);
+-        free(dev->spriteInfo->sprite);
+-    }
++    FreeSprite(dev);
+ 
+     /* a client may have the device set as client pointer */
+     for (j = 0; j < currentMaxClients; j++)
+--- a/dix/events.c
++++ b/dix/events.c
+@@ -3323,6 +3323,18 @@
+ #endif
+ }
+ 
++void FreeSprite(DeviceIntPtr dev)
++{
++    if (DevHasCursor(dev) && dev->spriteInfo->sprite) {
++        if (dev->spriteInfo->sprite->current)
++            FreeCursor(dev->spriteInfo->sprite->current, None);
++        free(dev->spriteInfo->sprite->spriteTrace);
++        free(dev->spriteInfo->sprite);
++    }
++    dev->spriteInfo->sprite = NULL;
++}
++
++
+ /**
+  * Update the mouse sprite info when the server switches from a pScreen to another.
+  * Otherwise, the pScreen of the mouse sprite is never updated when we switch
+--- a/include/dix.h
++++ b/include/dix.h
+@@ -417,6 +417,9 @@
+     DeviceIntPtr /* pDev */,
+     WindowPtr    /* pWin */);
+ 
++extern void FreeSprite(
++    DeviceIntPtr /* pDev */);
++
+ extern void UpdateSpriteForScreen(
+     DeviceIntPtr /* pDev */,
+     ScreenPtr /* pScreen */);

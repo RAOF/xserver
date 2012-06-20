@@ -1,0 +1,33 @@
+From 9c0e820216cd1631f75b037b7908d55ac091692c Mon Sep 17 00:00:00 2001
+From: Peter Hutterer <peter.hutterer@who-t.net>
+Date: Thu, 10 May 2012 12:55:44 +1000
+Subject: [PATCH 11/12] Xi: drop forced unpairing when changing the hierarchy
+
+Devices are unpaired as needed on DisableDevice now.
+
+Signed-off-by: Peter Hutterer <peter.hutterer@who-t.net>
+Reviewed-by: Chase Douglas <chase.douglas@canonical.com>
+---
+ Xi/xichangehierarchy.c |    6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/Xi/xichangehierarchy.c b/Xi/xichangehierarchy.c
+index 756aaac..89f16d8 100644
+--- a/Xi/xichangehierarchy.c
++++ b/Xi/xichangehierarchy.c
+@@ -293,12 +293,6 @@ remove_master(ClientPtr client, xXIRemoveMasterInfo * r, int flags[MAXDEVICES])
+         }
+     }
+ 
+-    /* can't disable until we removed pairing */
+-    keybd->spriteInfo->paired = NULL;
+-    ptr->spriteInfo->paired = NULL;
+-    XTestptr->spriteInfo->paired = NULL;
+-    XTestkeybd->spriteInfo->paired = NULL;
+-
+     /* disable the remove the devices, XTest devices must be done first
+        else the sprites they rely on will be destroyed  */
+     DisableDevice(XTestptr, FALSE);
+-- 
+1.7.9.5
+
