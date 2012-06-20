@@ -1,5 +1,6 @@
-xorg-server (2:1.11.4-0ubuntu10.3) UNRELEASED; urgency=low
+xorg-server (2:1.11.4-0ubuntu10.3) precise-proposed; urgency=low
 
+  [ Maarten Lankhorst ]
   * Add upstream patches for proper device disabling (LP: #1009629)
     - 510-dix-return-early-from-DisableDevice-if-the-device-is.patch
     - 511-dix-move-freeing-the-sprite-into-a-function.patch
@@ -8,7 +9,7 @@ xorg-server (2:1.11.4-0ubuntu10.3) UNRELEASED; urgency=low
     - 514-Xi-drop-forced-unpairing-when-changing-the-hierarchy.patch
     - 515-dix-disable-all-devices-before-shutdown.patch
 
- -- Maarten Lankhorst <maarten.lankhorst@canonical.com>  Wed, 20 Jun 2012 17:03:00 +0200
+ -- Chase Douglas <chase.douglas@ubuntu.com>  Wed, 20 Jun 2012 09:12:44 -0700
 
 xorg-server (2:1.11.4-0ubuntu10.2) precise-proposed; urgency=low
 
