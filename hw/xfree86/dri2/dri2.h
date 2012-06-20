@@ -64,6 +64,7 @@ typedef void (*DRI2CopyRegionProcPtr) (DrawablePtr pDraw,
                                        DRI2BufferPtr pSrcBuffer);
 typedef void (*DRI2WaitProcPtr) (WindowPtr pWin, unsigned int sequence);
 typedef int (*DRI2AuthMagicProcPtr) (int fd, uint32_t magic);
+typedef int (*DRI2AuthMagic2ProcPtr) (ScreenPtr pScreen, uint32_t magic);
 
 /**
  * Schedule a buffer swap
@@ -211,6 +212,16 @@ typedef struct {
 
     DRI2ReuseBufferNotifyProcPtr ReuseBufferNotify;
     DRI2SwapLimitValidateProcPtr SwapLimitValidate;
+
+    /* added in version 8 AND in xwayland branch */
+    /* 
+     * MERGE NOTE: when merging xwayland to master, the commit adding this
+     * is unnecessary, but it's slightly different in master.
+     */
+    /* AuthMagic callback which passes extra context */
+    /* If this is NULL the AuthMagic callback is used */
+    /* If this is non-NULL the AuthMagic callback is ignored */
+    DRI2AuthMagic2ProcPtr AuthMagic2;
 } DRI2InfoRec, *DRI2InfoPtr;
 
 extern _X_EXPORT int DRI2EventBase;

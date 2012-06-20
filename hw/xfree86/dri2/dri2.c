@@ -48,6 +48,8 @@
 
 #include "xf86.h"
 
+#include "xf86Priv.h"
+
 CARD8 dri2_major;               /* version of DRI2 supported by DDX */
 CARD8 dri2_minor;
 
@@ -104,7 +106,8 @@ typedef struct _DRI2Screen {
     DRI2ScheduleSwapProcPtr ScheduleSwap;
     DRI2GetMSCProcPtr GetMSC;
     DRI2ScheduleWaitMSCProcPtr ScheduleWaitMSC;
-    DRI2AuthMagicProcPtr AuthMagic;
+    DRI2AuthMagic2ProcPtr AuthMagic;
+    DRI2AuthMagicProcPtr LegacyAuthMagic;
     DRI2ReuseBufferNotifyProcPtr ReuseBufferNotify;
     DRI2SwapLimitValidateProcPtr SwapLimitValidate;
 
@@ -1109,12 +1112,22 @@ DRI2Connect(ScreenPtr pScreen, unsigned int driverType, int *fd,
     return TRUE;
 }
 
+static Bool
+DRI2AuthMagic (ScreenPtr pScreen, uint32_t magic)
+{
+    DRI2ScreenPtr ds = DRI2GetScreen(pScreen);
+    if (ds == NULL)
+        return -EINVAL;
+
+    return (*ds->LegacyAuthMagic) (ds->fd, magic);
+}
+
 Bool
 DRI2Authenticate(ScreenPtr pScreen, uint32_t magic)
 {
     DRI2ScreenPtr ds = DRI2GetScreen(pScreen);
 
-    if (ds == NULL || (*ds->AuthMagic) (ds->fd, magic))
+    if (ds == NULL || (*ds->AuthMagic) (pScreen, magic))
         return FALSE;
 
     return TRUE;
@@ -1200,9 +1213,23 @@ DRI2ScreenInit(ScreenPtr pScreen, DRI2InfoPtr info)
     else {
         cur_minor = 1;
     }
-
+    
+    /* 
+     * Hack: Gate this on xorgWayland rather than info->version.
+     * This API is introduced in 1.13 with version 8, but we only support
+     * version 6. This allows us to upstream xwayland DDX support in a way
+     * that's source-compatible.
+     *
+     * If a driver is built without xwayland support, we'll die before we get
+     * here. If a driver is built with xwayland support, it'll support
+     * AuthMagic2, or crash; we don't care about xwayland ABI yet.
+     */
+    if (xorgWayland) {
+        ds->AuthMagic = info->AuthMagic2;
+    }
+    
     if (info->version >= 5) {
-        ds->AuthMagic = info->AuthMagic;
+        ds->LegacyAuthMagic = info->AuthMagic;
     }
 
     if (info->version >= 6) {
@@ -1212,14 +1239,21 @@ DRI2ScreenInit(ScreenPtr pScreen, DRI2InfoPtr info)
 
     /*
      * if the driver doesn't provide an AuthMagic function or the info struct
-     * version is too low, it relies on the old method (using libdrm) or fail
+     * version is too low, call through LegacyAuthMagic
      */
-    if (!ds->AuthMagic)
+    if (!ds->AuthMagic) {
+        ds->AuthMagic = DRI2AuthMagic;
+        /*
+         * If the driver doesn't provide an AuthMagic function
+         * it relies on the old method (using libdrm) or fails
+         */
+        if (!ds->LegacyAuthMagic)
 #ifdef WITH_LIBDRM
-        ds->AuthMagic = drmAuthMagic;
+            ds->LegacyAuthMagic = drmAuthMagic;
 #else
-        goto err_out;
+            goto err_out;
 #endif
+    }
 
     /* Initialize minor if needed and set to minimum provied by DDX */
     if (!dri2_minor || dri2_minor > cur_minor)
