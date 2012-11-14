@@ -627,6 +627,7 @@ AC_ARG_ENABLE(linux_acpi, AS_HELP_STRING([--disable-linux-acpi], [Disable buildi
 AC_ARG_ENABLE(linux_apm, AS_HELP_STRING([--disable-linux-apm], [Disable building APM support on Linux (if available).]), [enable_linux_apm=$enableval], [enable_linux_apm=yes])
 AC_ARG_ENABLE(systemd-logind, AS_HELP_STRING([--enable-systemd-logind], [Build systemd-logind support (default: auto)]), [SYSTEMD_LOGIND=$enableval], [SYSTEMD_LOGIND=auto])
 AC_ARG_ENABLE(suid-wrapper, AS_HELP_STRING([--enable-suid-wrapper], [Build suid-root wrapper for legacy driver support on rootless xserver systems (default: no)]), [SUID_WRAPPER=$enableval], [SUID_WRAPPER=no])
+AC_ARG_ENABLE(xmir,           AS_HELP_STRING([--enable-xmir], [Build support for nesting in Mir (default: auto)]), [XMIR=$enableval], [XMIR=auto])
 
 dnl DDXes.
 AC_ARG_ENABLE(xorg,    	      AS_HELP_STRING([--enable-xorg], [Build Xorg server (default: auto)]), [XORG=$enableval], [XORG=auto])
@@ -1347,6 +1348,13 @@ if test "x$XINERAMA" = xyes; then
 	REQUIRED_MODULES="$REQUIRED_MODULES $XINERAMAPROTO"
 	SDK_REQUIRED_MODULES="$SDK_REQUIRED_MODULES $XINERAMAPROTO"
 fi
+
+if test "x$XMIR" != xno; then
+	PKG_CHECK_MODULES([XMIR], [mirclient], [XMIR=yes], [XMIR=no])
+	AC_SUBST([XMIR_LIBS])
+        AC_SUBST([XMIR_CFLAGS])
+fi	      
+AM_CONDITIONAL(XMIR, [test "x$XMIR" = xyes])
 
 AM_CONDITIONAL(XACE, [test "x$XACE" = xyes])
 if test "x$XACE" = xyes; then
@@ -2573,6 +2581,7 @@ hw/xfree86/utils/Makefile
 hw/xfree86/utils/man/Makefile
 hw/xfree86/utils/cvt/Makefile
 hw/xfree86/utils/gtf/Makefile
+hw/xfree86/xmir/Makefile
 hw/dmx/config/Makefile
 hw/dmx/config/man/Makefile
 hw/dmx/doc/Makefile
