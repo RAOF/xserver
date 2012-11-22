@@ -551,6 +551,14 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
                                               GET_REQUIRED_HW_INTERFACES,
                                               &flags);
 
+            if (xorgMir &&
+                (NEED_IO_ENABLED(flags) || !(flags & HW_SKIP_CONSOLE))) {
+                
+                ErrorF("Driver needs flags %lu, incompatible with nested, deleting.\n", flags);
+                xf86DeleteDriver(i);
+                continue;
+            }
+
             if (NEED_IO_ENABLED(flags))
                 want_hw_access = TRUE;
 
@@ -1477,6 +1485,10 @@ ddxProcessArgument(int argc, char **argv, int i)
     }
     if (!strcmp(argv[i], "-sharevts")) {
         xf86Info.ShareVTs = TRUE;
+        return 1;
+    }
+    if (!strcmp(argv[i], "-mir")) {
+        xorgMir = TRUE;
         return 1;
     }
 
