@@ -1319,6 +1319,8 @@ if test "x$XMIR" != xno; then
 	PKG_CHECK_MODULES([XMIR], [mirclient], [XMIR=yes], [XMIR=no])
 	AC_SUBST([XMIR_LIBS])
         AC_SUBST([XMIR_CFLAGS])
+        AC_DEFINE(XMIR, 1, [Support wayland mode])
+	SDK_REQUIRED_MODULES="$SDK_REQUIRED_MODULES mirclient"
 fi	      
 AM_CONDITIONAL(XMIR, [test "x$XMIR" = xyes])
 

@@ -118,6 +118,7 @@ static ModuleDefault ModuleDefaults[] = {
     {.name = "fb",.toLoad = TRUE,.load_opt = NULL},
     {.name = "shadow",.toLoad = TRUE,.load_opt = NULL},
 #endif
+    {.name = "xmir", .toLoad = FALSE, .load_opt = NULL},
     {.name = NULL,.toLoad = FALSE,.load_opt = NULL}
 };
 
@@ -258,6 +259,17 @@ xf86ModulelistFromConfig(pointer **optlist)
     if (xf86configptr == NULL) {
         xf86Msg(X_ERROR, "Cannot access global config data structure\n");
         return NULL;
+    }
+
+    /*
+     * Set the xmir module to autoload if requested.
+     */
+    if (xorgMir) {
+        for (i=0 ; ModuleDefaults[i].name != NULL ; i++) {
+            if (strcmp(ModuleDefaults[i].name, "xmir") == 0) {
+                ModuleDefaults[i].toLoad = TRUE;
+            }
+        }
     }
 
     if (xf86configptr->conf_modules) {

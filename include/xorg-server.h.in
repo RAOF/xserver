@@ -224,4 +224,7 @@
 /* Use XTrans FD passing support */
 #undef XTRANS_SEND_FDS
 
+/* Build XMIR nested server */
+#undef XMIR
+
 #endif /* _XORG_SERVER_H_ */
