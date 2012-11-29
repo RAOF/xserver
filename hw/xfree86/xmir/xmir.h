@@ -16,3 +16,5 @@ xmir_mode_init(ScrnInfoPtr scrn);
 _X_EXPORT Bool
 xmir_start_buffer_loop(mir_surface_lifecycle_callback callback, void *ctx);
 
+_X_EXPORT Bool
+xmir_populate_buffers_for_window(WindowPtr win, MirBufferPackage *bufs);

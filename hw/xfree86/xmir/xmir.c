@@ -216,6 +216,13 @@ xmir_start_buffer_loop(mir_surface_lifecycle_callback callback, void *ctx)
     return TRUE;
 }
 
+_X_EXPORT Bool
+xmir_populate_buffers_for_window(WindowPtr win, MirBufferPackage *bufs)
+{
+    mir_surface_get_current_buffer(root_surf, bufs);
+    return TRUE;
+}
+
 static void
 handle_surface_create(MirSurface *surface, void *ctx)
 {
@@ -237,10 +244,10 @@ xmir_mode_init(ScrnInfoPtr scrn)
     params.name = "Xorg";
     params.width = display_info.width;
     params.height = display_info.height;
-    params.pixel_format = mir_pixel_format_rgba_8888;
+    params.pixel_format = mir_pixel_format_rgbx_8888;
     params.buffer_usage = mir_buffer_usage_hardware;
     
-    mir_surface_create(conn, &params, &handle_surface_create, NULL);
+    mir_wait_for(mir_surface_create(conn, &params, &handle_surface_create, NULL));
     
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
