@@ -62,4 +62,5 @@ xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf);
 _X_EXPORT void
 xmir_submit_rendering_for_window(WindowPtr win,
                                  RegionPtr region,
-                                 xmir_buffer_available_callback callback);
+                                 xmir_buffer_available_callback callback,
+                                 void *context);
