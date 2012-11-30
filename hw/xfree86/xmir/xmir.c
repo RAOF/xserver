@@ -197,7 +197,7 @@ static const xf86CrtcConfigFuncsRec config_funcs = {
 
 
 _X_EXPORT int
-xmir_get_drm_fd(void)
+xmir_get_drm_fd(xmir_screen *screen)
 {
     MirPlatformPackage platform;
 
