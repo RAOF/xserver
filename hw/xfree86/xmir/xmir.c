@@ -207,6 +207,13 @@ xmir_get_drm_fd(void)
 }
 
 _X_EXPORT Bool
+xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic)
+{
+    /* Needs Mir protocol to do the auth proxy */
+    return TRUE;
+}
+
+_X_EXPORT Bool
 xmir_start_buffer_loop(mir_surface_lifecycle_callback callback, void *ctx)
 {    
     mir_surface_next_buffer(root_surf,

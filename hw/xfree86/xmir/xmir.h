@@ -50,6 +50,9 @@ typedef struct xmir_buffer_info {
 _X_EXPORT int
 xmir_get_drm_fd(xmir_screen *screen);
 
+_X_EXPORT Bool
+xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic);
+
 _X_EXPORT xmir_screen *
 xmir_screen_create(ScrnInfoPtr scrn);
 
