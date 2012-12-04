@@ -45,10 +45,6 @@
 
 #include <mir_client_library.h>
 
-static MirConnection *conn;
-static MirSurface *root_surf;
-
-
 static void
 crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
 {
@@ -195,13 +191,27 @@ static const xf86CrtcConfigFuncsRec config_funcs = {
     resize
 };
 
+static DevPrivateKeyRec xmir_screen_private_key;
+static DevPrivateKeyRec xmir_window_private_key;
+
+typedef struct {
+    MirConnection conn;
+    CreateWindowProcPtr CreateWindow;
+    ResizeWindowProcPtr ResizeWindow;
+} xmir_screen;
+
+xmir_screen *
+xmir_screen_get(ScreenPtr screen)
+{
+    return dixLookupPrivate(&screen->devPrivates, &xmir_screen_private_key);
+}
 
 _X_EXPORT int
 xmir_get_drm_fd(xmir_screen *screen)
 {
     MirPlatformPackage platform;
 
-    mir_connection_get_platform(conn, &platform);
+    mir_connection_get_platform(screen->conn, &platform);
     assert(platform.fd_items == 1);
     return platform.fd[0];
 }
@@ -213,34 +223,127 @@ xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic)
     return TRUE;
 }
 
-_X_EXPORT Bool
-xmir_start_buffer_loop(mir_surface_lifecycle_callback callback, void *ctx)
-{    
-    mir_surface_next_buffer(root_surf,
-	                        callback,
-                            ctx);
-
-    return TRUE;
-}
-
-_X_EXPORT Bool
-xmir_populate_buffers_for_window(WindowPtr win, MirBufferPackage *bufs)
-{
-    mir_surface_get_current_buffer(root_surf, bufs);
-    return TRUE;
-}
+typedef struct {
+    MirSurface surface;
+} xmir_window;
 
 static void
 handle_surface_create(MirSurface *surface, void *ctx)
 {
-    (void)ctx;
-    root_surf = surface;
+    xmir_window *mir_win = ctx;
+    mir_win->surface = surface;
+}
+
+static Bool
+xmir_create_window(WindowPtr win)
+{
+    ScreenPtr screen = window->drawable.pScreen;
+    xmir_screen *xmir = xmir_screen_get(screen);
+    Bool ret;
+
+    screen->CreateWindow = xmir->CreateWindow;
+    ret = (*screen->CreateWindow)(win);
+    screen->CreateWindow = xmir_create_window;
+
+    /* Until we support rootless operation, we care only for the root
+     * window, which has no parent.
+     */
+    if (window->parent == NULL) {
+        MirSurfaceParameters params;
+        xmir_window *mir_win = malloc(sizeof *mir_win);
+
+        if (mir_win == NULL)
+            return FALSE;
+
+        params.name = "Xorg";
+        params.width = win->drawable.width;
+        params.height = win->drawable.height;
+        /* 
+         * We'll need to do something smarter here when we're rootless -
+         * we'll need to distinguish between ARGB and RGB Visuals.
+         */
+        params.pixel_format = mir_pixel_format_rgbx_8888;
+        params.buffer_usage = mir_buffer_usage_hardware;
+
+        mir_wait_for(mir_surface_create(conn, 
+                                        &params,
+                                        &handle_surface_create,
+                                        mir_win));
+        if (mir_win->surface == NULL) {
+            free (mir_win);
+            return FALSE;
+        }
+    }
+
+    return ret;
+}
+
+static void
+handle_connection(MirConnection *connection, void *ctx)
+{
+    xmir_screen screen = ctx;
+    screen->conn = connection;
+}
+
+_X_EXPORT xmir_screen *
+xmir_screen_create(ScreenPtr pScreen)
+{
+    xmir_screen screen = calloc (1, sizeof *screen);
+    if (screen == NULL)
+        return NULL;
+
+    mir_wait_for(mir_connect("/tmp/mir_socket",
+                             "OMG XSERVER",
+                             handle_connection, screen);
+
+    if (!mir_connection_is_valid(screen->conn)) {
+        xf86Msg(X_ERROR,
+                "Failed to connect to Mir: %s\n",
+                mir_connection_get_error_message(screen->conn));
+        goto error;
+    }
+
+    if (!dixRegisterPrivateKey(&xmir_screen_private_key, PRIVATE_SCREEN, 0))
+        goto error;
+
+    if (!dixRegisterPrivateKey(&xmir_window_private_key, PRIVATE_WINDOW, 0))
+        goto error;
+
+    dixSetPrivate(&pScreen->devPrivates, &xmir_screen_private_key, screen);
+
+    screen->CreateWindow = pScreen->CreateWindow;
+/*    screen->ResizeWindow = pScreen->ResizeWindow; */
+
+    return screen;
+error:
+    if (screen)
+        free(screen);
+    return NULL;
+}
+
+xmir_window *
+xmir_window_get(WindowPtr win)
+{
+    return dixLookupPrivate(&win->devPrivates, &xmir_window_private_key);
+}
+
+_X_EXPORT Bool
+xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *bufs)
+{
+    xmir_window *xmir_win = xmir_get_window(win);
+    MirBufferPackage package;
+
+    mir_surface_get_current_buffer(xmir_win->surf, &package);
+    assert(package->num_data == 1);
+        
+    bufs->name = package.data[0];
+    bufs->stride = package.stride;
+    return TRUE;
 }
 
 _X_EXPORT Bool
 xmir_mode_init(ScrnInfoPtr scrn)
 {
-    MirSurfaceParameters params;
     MirDisplayInfo display_info;
 
     xf86OutputPtr xf86output;
@@ -248,13 +351,7 @@ xmir_mode_init(ScrnInfoPtr scrn)
     
     mir_connection_get_display_info(conn, &display_info);
     
-    params.name = "Xorg";
-    params.width = display_info.width;
-    params.height = display_info.height;
-    params.pixel_format = mir_pixel_format_rgbx_8888;
-    params.buffer_usage = mir_buffer_usage_hardware;
     
-    mir_wait_for(mir_surface_create(conn, &params, &handle_surface_create, NULL));
     
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
@@ -298,13 +395,6 @@ static XF86ModuleVersionInfo VersRec = {
 
 _X_EXPORT XF86ModuleData xmirModuleData = { &VersRec, xMirSetup, xMirTeardown };
 
-static void
-handle_connection(MirConnection *connection, void *ctx)
-{
-    (void)ctx;
-    conn = connection;
-}
-
 static pointer
 xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
@@ -316,8 +406,6 @@ xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
         return NULL;
     }
 
-    mir_connect("/tmp/mir_socket", "OMG XSERVER", handle_connection, NULL);
-
     setupDone = TRUE;
 
     return module;
@@ -326,5 +414,4 @@ xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 static void
 xMirTeardown(pointer module)
 {
-    mir_connection_release(conn);
 }
