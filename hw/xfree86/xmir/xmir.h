@@ -54,7 +54,7 @@ _X_EXPORT Bool
 xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic);
 
 _X_EXPORT xmir_screen *
-xmir_screen_create(ScrnInfoPtr scrn);
+xmir_screen_create(ScreenPtr scrn);
 
 _X_EXPORT Bool
 xmir_mode_init(xmir_screen *screen);
