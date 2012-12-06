@@ -30,6 +30,9 @@
  *   Christopher James Halse Rogers (christopher.halse.rogers@canonical.com)
  */
 
+#ifndef _XMIR_H
+#define _XMIR_H
+
 #include <stdint.h>
 #include <mir_client_library.h>
 
@@ -65,3 +68,5 @@ xmir_submit_rendering_for_window(WindowPtr win,
                                  RegionPtr region,
                                  xmir_buffer_available_callback callback,
                                  void *context);
+
+#endif /* _XMIR_H */
