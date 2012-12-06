@@ -57,7 +57,7 @@ xmir_screen_create(ScreenPtr scrn);
 _X_EXPORT Bool
 xmir_mode_init(ScreenPtr screen);
 
-_X_EXPORT void
+_X_EXPORT Bool
 xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf);
 
 _X_EXPORT void
