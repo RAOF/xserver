@@ -31,13 +31,10 @@
  */
 
 #include <stdint.h>
-#include "dixstruct.h"
-#include "windowstr.h"
-#include "scrnintstr.h"
-#include "xf86.h"
-#include "xf86Crtc.h"
-
 #include <mir_client_library.h>
+
+#include "scrnintstr.h"
+#include "window.h"
 
 typedef void (*xmir_buffer_available_callback)(WindowPtr win, void *ctx);
 

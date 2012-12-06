@@ -34,6 +34,7 @@
 #define _XMIR_PRIVATE_H
 
 #include <mir_client_library.h>
+#include "scrnintstr.h"
 
 struct xmir_screen {
     MirConnection *		conn;
