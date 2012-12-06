@@ -35,10 +35,10 @@
 #endif
 
 #include "xmir.h"
+#include "xmir-private.h"
 
 #include "xf86Module.h"
 #include "xf86Priv.h"
-#include "xf86.h"
 #include "dixstruct.h"
 #include "windowstr.h"
 #include "scrnintstr.h"
@@ -52,7 +52,7 @@ crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
 
 static Bool
 crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
-		    Rotation rotation, int x, int y)
+		    Rotation rotation, int x, int y)  
 {
 	return TRUE;
 }
@@ -192,13 +192,6 @@ static const xf86CrtcConfigFuncsRec config_funcs = {
 };
 
 static DevPrivateKeyRec xmir_screen_private_key;
-static DevPrivateKeyRec xmir_window_private_key;
-
-typedef struct {
-    MirConnection conn;
-    CreateWindowProcPtr CreateWindow;
-    ResizeWindowProcPtr ResizeWindow;
-} xmir_screen;
 
 xmir_screen *
 xmir_screen_get(ScreenPtr screen)
@@ -223,78 +216,23 @@ xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic)
     return TRUE;
 }
 
-typedef struct {
-    MirSurface surface;
-} xmir_window;
-
-static void
-handle_surface_create(MirSurface *surface, void *ctx)
-{
-    xmir_window *mir_win = ctx;
-    mir_win->surface = surface;
-}
-
-static Bool
-xmir_create_window(WindowPtr win)
-{
-    ScreenPtr screen = window->drawable.pScreen;
-    xmir_screen *xmir = xmir_screen_get(screen);
-    Bool ret;
-
-    screen->CreateWindow = xmir->CreateWindow;
-    ret = (*screen->CreateWindow)(win);
-    screen->CreateWindow = xmir_create_window;
-
-    /* Until we support rootless operation, we care only for the root
-     * window, which has no parent.
-     */
-    if (window->parent == NULL) {
-        MirSurfaceParameters params;
-        xmir_window *mir_win = malloc(sizeof *mir_win);
-
-        if (mir_win == NULL)
-            return FALSE;
-
-        params.name = "Xorg";
-        params.width = win->drawable.width;
-        params.height = win->drawable.height;
-        /* 
-         * We'll need to do something smarter here when we're rootless -
-         * we'll need to distinguish between ARGB and RGB Visuals.
-         */
-        params.pixel_format = mir_pixel_format_rgbx_8888;
-        params.buffer_usage = mir_buffer_usage_hardware;
-
-        mir_wait_for(mir_surface_create(conn, 
-                                        &params,
-                                        &handle_surface_create,
-                                        mir_win));
-        if (mir_win->surface == NULL) {
-            free (mir_win);
-            return FALSE;
-        }
-    }
-
-    return ret;
-}
-
 static void
 handle_connection(MirConnection *connection, void *ctx)
 {
-    xmir_screen screen = ctx;
+    xmir_screen *screen = ctx;
     screen->conn = connection;
 }
 
 _X_EXPORT xmir_screen *
 xmir_screen_create(ScreenPtr pScreen)
 {
-    xmir_screen screen = calloc (1, sizeof *screen);
+    xmir_screen *screen = calloc (1, sizeof *screen);
     if (screen == NULL)
         return NULL;
 
     mir_wait_for(mir_connect("/tmp/mir_socket",
                              "OMG XSERVER",
-                             handle_connection, screen);
+                             handle_connection, screen));
 
     if (!mir_connection_is_valid(screen->conn)) {
         xf86Msg(X_ERROR,
@@ -305,14 +243,10 @@ xmir_screen_create(ScreenPtr pScreen)
 
     if (!dixRegisterPrivateKey(&xmir_screen_private_key, PRIVATE_SCREEN, 0))
         goto error;
-
-    if (!dixRegisterPrivateKey(&xmir_window_private_key, PRIVATE_WINDOW, 0))
-        goto error;
-
     dixSetPrivate(&pScreen->devPrivates, &xmir_screen_private_key, screen);
 
-    screen->CreateWindow = pScreen->CreateWindow;
-/*    screen->ResizeWindow = pScreen->ResizeWindow; */
+    if (!xmir_screen_init_window(screen, pScreen))
+        goto error;
 
     return screen;
 error:
@@ -321,37 +255,20 @@ error:
     return NULL;
 }
 
-xmir_window *
-xmir_window_get(WindowPtr win)
-{
-    return dixLookupPrivate(&win->devPrivates, &xmir_window_private_key);
-}
-
 _X_EXPORT Bool
-xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *bufs)
-{
-    xmir_window *xmir_win = xmir_get_window(win);
-    MirBufferPackage package;
-
-    mir_surface_get_current_buffer(xmir_win->surf, &package);
-    assert(package->num_data == 1);
-        
-    bufs->name = package.data[0];
-    bufs->stride = package.stride;
-    return TRUE;
-}
-
-_X_EXPORT Bool
-xmir_mode_init(ScrnInfoPtr scrn)
+xmir_mode_init(ScreenPtr screen)
 {
     MirDisplayInfo display_info;
+    xmir_screen *xmir = xmir_screen_get(screen);
+    ScrnInfoPtr scrn = xf86ScreenToScrn(screen);
+
+    if (xmir == NULL)
+        return FALSE;
 
     xf86OutputPtr xf86output;
     struct mir_output *output;
     
-    mir_connection_get_display_info(conn, &display_info);
-    
-    
+    mir_connection_get_display_info(xmir->conn, &display_info);
     
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
