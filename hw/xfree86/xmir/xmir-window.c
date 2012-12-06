@@ -34,7 +34,9 @@
 #include "xorg-config.h"
 #endif
 #include <xorg-server.h>
+#include "windowstr.h"
 
+#include "xmir.h"
 #include "xmir-private.h"
 
 #include <stdlib.h>
@@ -43,7 +45,7 @@
 static DevPrivateKeyRec xmir_window_private_key;
 
 typedef struct {
-    MirSurface surface;
+    MirSurface  *surface;
 } xmir_window;
 
 static xmir_window *
@@ -53,16 +55,16 @@ xmir_window_get(WindowPtr win)
 }
 
 _X_EXPORT Bool
-xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *bufs)
+xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf)
 {
-    xmir_window *xmir_win = xmir_get_window(win);
+    xmir_window *xmir_win = xmir_window_get(win);
     MirBufferPackage package;
 
-    mir_surface_get_current_buffer(xmir_win->surf, &package);
-    assert(package->num_data == 1);
+    mir_surface_get_current_buffer(xmir_win->surface, &package);
+    assert(package.data_items == 1);
         
-    bufs->name = package.data[0];
-    bufs->stride = package.stride;
+    buf->name = package.data[0];
+    buf->stride = package.stride;
     return TRUE;
 }
 
@@ -108,7 +110,7 @@ handle_surface_create(MirSurface *surface, void *ctx)
 static Bool
 xmir_create_window(WindowPtr win)
 {
-    ScreenPtr screen = window->drawable.pScreen;
+    ScreenPtr screen = win->drawable.pScreen;
     xmir_screen *xmir = xmir_screen_get(screen);
     Bool ret;
 
@@ -119,7 +121,7 @@ xmir_create_window(WindowPtr win)
     /* Until we support rootless operation, we care only for the root
      * window, which has no parent.
      */
-    if (window->parent == NULL) {
+    if (win->parent == NULL) {
         MirSurfaceParameters params;
         xmir_window *mir_win = malloc(sizeof *mir_win);
 
@@ -136,7 +138,7 @@ xmir_create_window(WindowPtr win)
         params.pixel_format = mir_pixel_format_rgbx_8888;
         params.buffer_usage = mir_buffer_usage_hardware;
 
-        mir_wait_for(mir_surface_create(conn,
+        mir_wait_for(mir_surface_create(xmir->conn,
                                         &params,
                                         &handle_surface_create,
                                         mir_win));
@@ -150,12 +152,12 @@ xmir_create_window(WindowPtr win)
 }
 
 Bool
-xmir_screen_init_window(xmir_screen *mir_screen, ScreenPtr screen)
+xmir_screen_init_window(xmir_screen *xmir, ScreenPtr screen)
 {
     if (!dixRegisterPrivateKey(&xmir_window_private_key, PRIVATE_WINDOW, 0))
         return FALSE;
 
-    mir_screen->CreateWindow = pScreen->CreateWindow;
+    xmir->CreateWindow = screen->CreateWindow;
 
     return TRUE;
 }
