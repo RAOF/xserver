@@ -17,5 +17,6 @@ libxmir_la_LDFLAGS = -module -avoid-version $(LIBDRM_LIBS) $(XMIR_LIBS)
 libxmir_ladir = $(moduledir)/extensions
 libxmir_la_SOURCES = \
 	xmir.c
+	xmir-window.c
 
 sdk_HEADERS = xmir.h
