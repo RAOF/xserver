@@ -66,6 +66,38 @@ xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *bufs)
     return TRUE;
 }
 
+struct xmir_window_callback_closure {
+    xmir_buffer_available_callback callback;
+    WindowPtr win;
+    void *ctx;
+};
+
+static void
+handle_buffer_received(MirSurface *surf, void *ctx)
+{
+    struct xmir_window_callback_closure *closure = ctx;
+
+    (*closure->callback)(closure->win, closure->ctx);
+
+    free(closure);
+}
+
+_X_EXPORT void
+xmir_submit_rendering_for_window(WindowPtr win,
+                                 RegionPtr region,
+                                 xmir_buffer_available_callback callback,
+                                 void *context)
+{
+    xmir_window *mir_win = xmir_window_get(win);
+    struct xmir_window_callback_closure *closure = malloc(sizeof *closure);
+
+    /* TODO: handle failing malloc() */
+    closure->win = win;
+    closure->ctx = context;
+
+    mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, closure);
+}
+
 static void
 handle_surface_create(MirSurface *surface, void *ctx)
 {
