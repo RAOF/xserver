@@ -37,11 +37,8 @@
 #include "xmir.h"
 #include "xmir-private.h"
 
-#include "xf86Module.h"
-#include "xf86Priv.h"
-#include "dixstruct.h"
-#include "windowstr.h"
-#include "scrnintstr.h"
+#include "xf86.h"
+#include "xf86Crtc.h"
 
 #include <mir_client_library.h>
 
