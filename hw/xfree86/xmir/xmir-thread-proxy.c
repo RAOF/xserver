@@ -30,36 +30,36 @@
  *   Christopher James Halse Rogers (christopher.halse.rogers@canonical.com)
  */
 
-#ifndef _XMIR_PRIVATE_H
-#define _XMIR_PRIVATE_H
+#include <stdint.h>
 
-#include <mir_client_library.h>
-#include "xmir.h"
-#include "scrnintstr.h"
+#include "xmir-private.h"
 
-struct xmir_screen {
-    MirConnection *		conn;
-    CreateWindowProcPtr CreateWindow;
+struct xmir_marshall_handler {
+	int id;
+	void (*msg_handler)(void *msg);
+	size_t msg_size;
 };
 
-xmir_screen *
-xmir_screen_get(ScreenPtr screen);
-
-Bool
-xmir_screen_init_window(xmir_screen *mir_screen, ScreenPtr screen);
-
-typedef struct xmir_marshall_handler xmir_marshall_handler;
-
 void
-xmir_init_thread_to_eventloop(void);
+xmir_init_thread_to_eventloop(void)
+{
+
+}
 
 xmir_marshall_handler *
-xmir_register_handler(void (*msg_handler)(void *msg), size_t msg_size);
+xmir_register_handler(void (*msg_handler)(void *msg), size_t msg_size)
+{
+	return NULL;
+}
 
 void
-xmir_post_to_eventloop(xmir_marshall_handler *handler, void *msg);
+xmir_post_to_eventloop(xmir_marshall_handler *handler, void *msg) 
+{
+
+}
 
 void
-xmir_process_from_eventloop(void);
-
- #endif /* _MIR_PRIVATE_H */
+xmir_process_from_eventloop(void)
+{
+	
+}
