@@ -6,7 +6,12 @@ if XORG
 # For now, requires xf86 ddx, could be adjusted to use another
 SUBDIRS += xi2
 noinst_PROGRAMS += xkb input xtest misc fixes xfree86 hashtabletest os signal-logging touch
-endif
+
+if XMIR
+noinst_PROGRAMS += xmir-thread-proxy
+endif #XMIR
+
+endif #XORG
 check_LTLIBRARIES = libxservertest.la
 
 TESTS=$(noinst_PROGRAMS)
@@ -38,6 +43,8 @@ touch_LDADD=$(TEST_LDADD)
 signal_logging_LDADD=$(TEST_LDADD)
 hashtabletest_LDADD=$(TEST_LDADD) $(top_srcdir)/Xext/hashtable.c
 os_LDADD=$(TEST_LDADD)
+xmir_thread_proxy_LDADD=$(TEST_LDADD) $(top_srcdir)/hw/xfree86/xmir/xmir-thread-proxy.c
+xmir_thread_proxy_CFLAGS=$(AM_CFLAGS) 	$(XMIR_CFLAGS) -I$(top_srcdir)/hw/xfree86/xmir
 
 libxservertest_la_LIBADD = $(XSERVER_LIBS)
 if XORG
