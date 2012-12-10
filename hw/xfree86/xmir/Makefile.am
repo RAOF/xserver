@@ -18,6 +18,9 @@ libxmir_ladir = $(moduledir)/extensions
 libxmir_la_SOURCES = \
 	xmir.c \
 	xmir-window.c \
-	xmir-output.c
+	xmir-output.c \
+	xmir-thread-proxy.c \
+	xmir.h \
+	xmir-private.h
 
 sdk_HEADERS = xmir.h
