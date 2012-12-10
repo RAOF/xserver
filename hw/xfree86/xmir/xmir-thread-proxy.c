@@ -43,19 +43,21 @@ struct xmir_marshall_handler {
 void
 xmir_init_thread_to_eventloop(void)
 {
-
 }
 
 xmir_marshall_handler *
 xmir_register_handler(void (*msg_handler)(void *msg), size_t msg_size)
 {
-	return NULL;
+	xmir_marshall_handler *handler = malloc(sizeof *handler);
+	handler->msg_handler = msg_handler;
+	handler->msg_size = msg_size;
+	return handler;
 }
 
 void
 xmir_post_to_eventloop(xmir_marshall_handler *handler, void *msg) 
 {
-
+	(*handler->msg_handler)(msg);
 }
 
 void
