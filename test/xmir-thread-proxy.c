@@ -137,9 +137,18 @@ xmir_test_many_threads_to_eventloop(void)
 	assert(check == NUM_THREADS);	
 }
 
+static void
+xmir_test_refuses_to_marshall_too_large_msg(void)
+{
+	xmir_init_thread_to_eventloop();
+
+	assert(xmir_register_handler(&_test_callback, PIPE_BUF) == NULL);
+}
+
 int
 main(int argc, char **argv)
 {
 	xmir_test_marshall_to_eventloop();
 	xmir_test_many_threads_to_eventloop();
+	xmir_test_refuses_to_marshall_too_large_msg();
 }
