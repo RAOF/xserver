@@ -60,7 +60,15 @@ xmir_init_thread_to_eventloop(void)
 xmir_marshall_handler *
 xmir_register_handler(void (*msg_handler)(void *msg), size_t msg_size)
 {
-	xmir_marshall_handler *handler = malloc(sizeof *handler + msg_size);
+	xmir_marshall_handler *handler;
+
+	if (msg_size + sizeof *handler > PIPE_BUF)
+		return NULL;
+
+	handler = malloc(sizeof *handler + msg_size);
+	if (!handler)
+		return NULL;
+
 	handler->msg_handler = msg_handler;
 	handler->msg_size = msg_size;
 	return handler;
