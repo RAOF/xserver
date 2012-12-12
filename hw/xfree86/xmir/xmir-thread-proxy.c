@@ -31,24 +31,36 @@
  */
 
 #include <stdint.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "xmir-private.h"
 
 struct xmir_marshall_handler {
-	int id;
 	void (*msg_handler)(void *msg);
 	size_t msg_size;
+	char msg[];
 };
+
+static int pipefds[2];
 
 void
 xmir_init_thread_to_eventloop(void)
 {
+	pipe(pipefds);
+
+	/* Set the read end to not block; we'll pull from this in the event loop
+	 * We don't need to care about the write end, as that'll be written to
+	 * from its own thread
+	 */
+	fcntl(pipefds[0], F_SETFL, O_NONBLOCK);
 }
 
 xmir_marshall_handler *
 xmir_register_handler(void (*msg_handler)(void *msg), size_t msg_size)
 {
-	xmir_marshall_handler *handler = malloc(sizeof *handler);
+	xmir_marshall_handler *handler = malloc(sizeof *handler + msg_size);
 	handler->msg_handler = msg_handler;
 	handler->msg_size = msg_size;
 	return handler;
@@ -57,11 +69,28 @@ xmir_register_handler(void (*msg_handler)(void *msg), size_t msg_size)
 void
 xmir_post_to_eventloop(xmir_marshall_handler *handler, void *msg) 
 {
-	(*handler->msg_handler)(msg);
+	const int total_size = sizeof *handler + handler->msg_size;
+	/* We require the total size to be less than PIPE_BUF to ensure an atomic write */
+	assert(total_size < PIPE_BUF);
+
+	memcpy(handler->msg, msg, handler->msg_size);
+	write(pipefds[1], handler, total_size);
 }
 
 void
 xmir_process_from_eventloop(void)
 {
-	
+	xmir_marshall_handler handler;
+	void *msg;
+
+	for (;;) {
+		if (read(pipefds[0], &handler, sizeof handler) < 0) {
+			return;
+		}
+
+		msg = malloc(handler.msg_size);
+		if(read(pipefds[0], msg, handler.msg_size) == handler.msg_size)
+			(*handler.msg_handler)(msg);
+		free(msg);
+	}
 }
