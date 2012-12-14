@@ -189,11 +189,10 @@ xmir_mode_init(ScreenPtr screen)
     xmir_screen *xmir = xmir_screen_get(screen);
     ScrnInfoPtr scrn = xf86ScreenToScrn(screen);
     xf86OutputPtr xf86output;
+    struct mir_output *output;
 
     if (xmir == NULL)
         return FALSE;
-
-    struct mir_output *output;
     
     mir_connection_get_display_info(xmir->conn, &display_info);
     
