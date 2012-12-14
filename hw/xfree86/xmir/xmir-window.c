@@ -45,6 +45,7 @@
 static DevPrivateKeyRec xmir_window_private_key;
 
 typedef struct {
+    xmir_screen *xmir;
     MirSurface  *surface;
 } xmir_window;
 
@@ -75,16 +76,33 @@ struct xmir_window_callback_closure {
 };
 
 static void
-handle_buffer_received(MirSurface *surf, void *ctx)
+xmir_handle_buffer_available(void *ctx)
 {
     struct xmir_window_callback_closure *closure = ctx;
 
     (*closure->callback)(closure->win, closure->ctx);
+}
+
+static void
+handle_buffer_received(MirSurface *surf, void *ctx)
+{
+    struct xmir_window_callback_closure *closure = ctx;
+    xmir_window *xmir_win = xmir_window_get(closure->win);
+
+    xmir_post_to_eventloop(xmir_win->xmir->submit_rendering_handler, ctx);
 
     free(closure);
 }
 
-_X_EXPORT void
+/* Submit rendering for @window to Mir
+ * @region is an (optional) damage region, to hint the compositor as to what
+ * region has changed. It can be NULL to indicate the whole window should be
+ * considered dirty.
+ * Once there is a new buffer available for @window, @callback will be called
+ * with @context.
+ * The callback is run from the main X event loop.
+ */
+_X_EXPORT int
 xmir_submit_rendering_for_window(WindowPtr win,
                                  RegionPtr region,
                                  xmir_buffer_available_callback callback,
@@ -93,11 +111,15 @@ xmir_submit_rendering_for_window(WindowPtr win,
     xmir_window *mir_win = xmir_window_get(win);
     struct xmir_window_callback_closure *closure = malloc(sizeof *closure);
 
-    /* TODO: handle failing malloc() */
+    if (closure == NULL)
+        return BadAlloc;
+
     closure->win = win;
     closure->ctx = context;
 
     mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, closure);
+
+    return Success;
 }
 
 static void
@@ -146,6 +168,7 @@ xmir_create_window(WindowPtr win)
             free (mir_win);
             return FALSE;
         }
+        mir_win->xmir = xmir;
     }
 
     return ret;
@@ -158,6 +181,14 @@ xmir_screen_init_window(xmir_screen *xmir, ScreenPtr screen)
         return FALSE;
 
     xmir->CreateWindow = screen->CreateWindow;
+    screen->CreateWindow = xmir_create_window;
+
+    xmir->submit_rendering_handler = 
+        xmir_register_handler(&xmir_handle_buffer_available,
+                              sizeof (struct xmir_window_callback_closure));
+
+    if (xmir->submit_rendering_handler == NULL)
+        return FALSE;
 
     return TRUE;
 }

@@ -45,6 +45,13 @@ struct xmir_marshall_handler {
 
 static int pipefds[2];
 
+static void
+xmir_wakeup_handler(pointer data, int err, pointer read_mask)
+{
+    if (err >= 0 && FD_ISSET(pipefds[0], (fd_set *)read_mask))
+        xmir_process_from_eventloop();
+}
+
 void
 xmir_init_thread_to_eventloop(void)
 {
@@ -55,6 +62,9 @@ xmir_init_thread_to_eventloop(void)
 	 * from its own thread
 	 */
 	fcntl(pipefds[0], F_SETFL, O_NONBLOCK);
+
+	AddGeneralSocket(pipefds[0]);
+	RegisterBlockAndWakeupHandlers(NULL, xmir_wakeup_handler, NULL);
 }
 
 xmir_marshall_handler *
@@ -102,3 +112,4 @@ xmir_process_from_eventloop(void)
 		free(msg);
 	}
 }
+
