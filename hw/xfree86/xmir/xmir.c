@@ -136,6 +136,8 @@ xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
         return NULL;
     }
 
+    xmir_init_thread_to_eventloop();    
+
     setupDone = TRUE;
 
     return module;
