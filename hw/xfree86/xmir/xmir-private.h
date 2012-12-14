@@ -37,9 +37,12 @@
 #include "xmir.h"
 #include "scrnintstr.h"
 
+typedef struct xmir_marshall_handler xmir_marshall_handler;
+
 struct xmir_screen {
     MirConnection *		conn;
     CreateWindowProcPtr CreateWindow;
+    xmir_marshall_handler *submit_rendering_handler;
 };
 
 xmir_screen *
@@ -47,8 +50,6 @@ xmir_screen_get(ScreenPtr screen);
 
 Bool
 xmir_screen_init_window(xmir_screen *mir_screen, ScreenPtr screen);
-
-typedef struct xmir_marshall_handler xmir_marshall_handler;
 
 void
 xmir_init_thread_to_eventloop(void);
