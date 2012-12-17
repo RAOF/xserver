@@ -36,14 +36,21 @@
 #include <stdint.h>
 #include <mir_client_library.h>
 
+#include "xf86str.h"
 #include "scrnintstr.h"
 #include "window.h"
 
-typedef void (*xmir_buffer_available_callback)(WindowPtr win, void *ctx);
+typedef void (*xmir_buffer_available_proc)(WindowPtr win);
 
 typedef struct xmir_screen xmir_screen;
 
-typedef struct xmir_buffer_info {
+#define XMIR_DRIVER_VERSION 1
+typedef struct {
+    int version;
+    xmir_buffer_available_proc BufferAvailableForWindow;
+} xmir_driver;
+
+typedef struct {
     uint32_t name;
     uint32_t stride;
 } xmir_buffer_info;
@@ -55,18 +62,19 @@ _X_EXPORT Bool
 xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic);
 
 _X_EXPORT xmir_screen *
-xmir_screen_create(ScreenPtr scrn);
+xmir_screen_create(ScrnInfoPtr scrn);
 
 _X_EXPORT Bool
-xmir_mode_init(ScreenPtr screen);
+xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver);
+
+_X_EXPORT Bool
+xmir_screen_init(ScreenPtr screen, xmir_screen *xmir);
 
 _X_EXPORT Bool
 xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf);
 
 _X_EXPORT int
 xmir_submit_rendering_for_window(WindowPtr win,
-                                 RegionPtr region,
-                                 xmir_buffer_available_callback callback,
-                                 void *context);
+                                 RegionPtr region);
 
 #endif /* _XMIR_H */
