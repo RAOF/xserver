@@ -69,29 +69,22 @@ xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf)
     return TRUE;
 }
 
-struct xmir_window_callback_closure {
-    xmir_buffer_available_callback callback;
-    WindowPtr win;
-    void *ctx;
-};
-
 static void
 xmir_handle_buffer_available(void *ctx)
 {
-    struct xmir_window_callback_closure *closure = ctx;
-
-    (*closure->callback)(closure->win, closure->ctx);
+    WindowPtr win = ctx;
+    xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
+    
+    (*xmir->driver->BufferAvailableForWindow)(win);
 }
 
 static void
 handle_buffer_received(MirSurface *surf, void *ctx)
 {
-    struct xmir_window_callback_closure *closure = ctx;
-    xmir_window *xmir_win = xmir_window_get(closure->win);
+    WindowPtr win = ctx;
+    xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
 
-    xmir_post_to_eventloop(xmir_win->xmir->submit_rendering_handler, ctx);
-
-    free(closure);
+    xmir_post_to_eventloop(xmir->submit_rendering_handler, win);
 }
 
 /* Submit rendering for @window to Mir
@@ -104,20 +97,11 @@ handle_buffer_received(MirSurface *surf, void *ctx)
  */
 _X_EXPORT int
 xmir_submit_rendering_for_window(WindowPtr win,
-                                 RegionPtr region,
-                                 xmir_buffer_available_callback callback,
-                                 void *context)
+                                 RegionPtr region)
 {
     xmir_window *mir_win = xmir_window_get(win);
-    struct xmir_window_callback_closure *closure = malloc(sizeof *closure);
 
-    if (closure == NULL)
-        return BadAlloc;
-
-    closure->win = win;
-    closure->ctx = context;
-
-    mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, closure);
+    mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, win);
 
     return Success;
 }
@@ -185,7 +169,7 @@ xmir_screen_init_window(xmir_screen *xmir, ScreenPtr screen)
 
     xmir->submit_rendering_handler = 
         xmir_register_handler(&xmir_handle_buffer_available,
-                              sizeof (struct xmir_window_callback_closure));
+                              sizeof (WindowPtr));
 
     if (xmir->submit_rendering_handler == NULL)
         return FALSE;

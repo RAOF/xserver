@@ -35,13 +35,15 @@
 
 #include <mir_client_library.h>
 #include "xmir.h"
+#include "xf86str.h"
 #include "scrnintstr.h"
 
 typedef struct xmir_marshall_handler xmir_marshall_handler;
 
 struct xmir_screen {
-    MirConnection *		conn;
-    CreateWindowProcPtr CreateWindow;
+    MirConnection *		   conn;
+    CreateWindowProcPtr    CreateWindow;
+    xmir_driver *          driver;
     xmir_marshall_handler *submit_rendering_handler;
 };
 
@@ -49,7 +51,10 @@ xmir_screen *
 xmir_screen_get(ScreenPtr screen);
 
 Bool
-xmir_screen_init_window(xmir_screen *mir_screen, ScreenPtr screen);
+xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir);
+
+Bool
+xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir);
 
 void
 xmir_init_thread_to_eventloop(void);

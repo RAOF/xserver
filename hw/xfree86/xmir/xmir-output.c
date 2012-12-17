@@ -182,18 +182,13 @@ static const xf86CrtcConfigFuncsRec config_funcs = {
     resize
 };
 
-_X_EXPORT Bool
-xmir_mode_init(ScreenPtr screen)
+Bool
+xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
 {
     MirDisplayInfo display_info;
-    xmir_screen *xmir = xmir_screen_get(screen);
-    ScrnInfoPtr scrn = xf86ScreenToScrn(screen);
     xf86OutputPtr xf86output;
     struct mir_output *output;
 
-    if (xmir == NULL)
-        return FALSE;
-    
     mir_connection_get_display_info(xmir->conn, &display_info);
     
     /* Set up CRTC config functions */
