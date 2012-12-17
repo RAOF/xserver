@@ -70,40 +70,57 @@ xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic)
 static void
 handle_connection(MirConnection *connection, void *ctx)
 {
-    xmir_screen *screen = ctx;
-    screen->conn = connection;
+    xmir_screen *xmir = ctx;
+    xmir->conn = connection;
 }
 
 _X_EXPORT xmir_screen *
-xmir_screen_create(ScreenPtr pScreen)
+xmir_screen_create(ScrnInfoPtr scrn)
 {
-    xmir_screen *screen = calloc (1, sizeof *screen);
-    if (screen == NULL)
+    xmir_screen *xmir = calloc (1, sizeof *xmir);
+    if (xmir == NULL)
         return NULL;
 
     mir_wait_for(mir_connect("/tmp/mir_socket",
                              "OMG XSERVER",
-                             handle_connection, screen));
+                             handle_connection, xmir));
 
-    if (!mir_connection_is_valid(screen->conn)) {
+    if (!mir_connection_is_valid(xmir->conn)) {
         xf86Msg(X_ERROR,
                 "Failed to connect to Mir: %s\n",
-                mir_connection_get_error_message(screen->conn));
+                mir_connection_get_error_message(xmir->conn));
         goto error;
     }
 
-    if (!dixRegisterPrivateKey(&xmir_screen_private_key, PRIVATE_SCREEN, 0))
-        goto error;
-    dixSetPrivate(&pScreen->devPrivates, &xmir_screen_private_key, screen);
-
-    if (!xmir_screen_init_window(screen, pScreen))
-        goto error;
-
-    return screen;
+    return xmir;
 error:
-    if (screen)
-        free(screen);
+    if (xmir)
+        free(xmir);
     return NULL;
+}
+
+_X_EXPORT Bool
+xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver)
+{
+    xmir->driver = driver;
+
+    if (!xmir_mode_pre_init(scrn, xmir))
+        return FALSE;
+
+    return TRUE;
+}
+
+_X_EXPORT Bool
+xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
+{
+    if (!dixRegisterPrivateKey(&xmir_screen_private_key, PRIVATE_SCREEN, 0))
+        return FALSE;
+    dixSetPrivate(&screen->devPrivates, &xmir_screen_private_key, xmir);
+
+    if (!xmir_screen_init_window(screen, xmir))
+        return FALSE;
+
+    return TRUE;
 }
 
 

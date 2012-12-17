@@ -44,7 +44,7 @@ signal_logging_LDADD=$(TEST_LDADD)
 hashtabletest_LDADD=$(TEST_LDADD) $(top_srcdir)/Xext/hashtable.c
 os_LDADD=$(TEST_LDADD)
 xmir_thread_proxy_LDADD=$(TEST_LDADD) $(top_srcdir)/hw/xfree86/xmir/xmir-thread-proxy.c -lpthread
-xmir_thread_proxy_CFLAGS=$(AM_CFLAGS) $(XMIR_CFLAGS) -I$(top_srcdir)/hw/xfree86/xmir
+xmir_thread_proxy_CFLAGS=$(AM_CFLAGS) $(XMIR_CFLAGS) -I$(top_srcdir)/hw/xfree86/xmir -I$(top_srcdir)/hw/xfree86/common
 
 libxservertest_la_LIBADD = $(XSERVER_LIBS)
 if XORG
