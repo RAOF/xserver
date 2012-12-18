@@ -40,7 +40,7 @@
 #include "xf86.h"
 
 #include <mir_client_library.h>
-
+#include <mir_client_library_drm.h>
 
 static DevPrivateKeyRec xmir_screen_private_key;
 
@@ -60,11 +60,22 @@ xmir_get_drm_fd(xmir_screen *screen)
     return platform.fd[0];
 }
 
-_X_EXPORT Bool
-xmir_auth_drm_magic(xmir_screen *screen, uint32_t magic)
+static void
+handle_auth_magic(int status, void *ctx)
 {
-    /* Needs Mir protocol to do the auth proxy */
-    return TRUE;
+    int *retVal = ctx;
+    *retVal = status;
+}
+
+_X_EXPORT int
+xmir_auth_drm_magic(xmir_screen *xmir, uint32_t magic)
+{
+    int status;
+    mir_wait_for(mir_connection_drm_auth_magic(xmir->conn,
+                                               magic,
+                                               &handle_auth_magic,
+                                               &status));
+    return status;
 }
 
 static void
