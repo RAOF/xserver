@@ -64,7 +64,7 @@ xmir_init_thread_to_eventloop(void)
 	fcntl(pipefds[0], F_SETFL, O_NONBLOCK);
 
 	AddGeneralSocket(pipefds[0]);
-	RegisterBlockAndWakeupHandlers(NULL, xmir_wakeup_handler, NULL);
+	RegisterBlockAndWakeupHandlers(NoopDDA, xmir_wakeup_handler, NULL);
 }
 
 xmir_marshall_handler *
