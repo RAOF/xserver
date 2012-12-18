@@ -72,7 +72,7 @@ xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf)
 static void
 xmir_handle_buffer_available(void *ctx)
 {
-    WindowPtr win = ctx;
+    WindowPtr win = *(WindowPtr *)ctx;
     xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
     
     (*xmir->driver->BufferAvailableForWindow)(win);
@@ -84,7 +84,7 @@ handle_buffer_received(MirSurface *surf, void *ctx)
     WindowPtr win = ctx;
     xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
 
-    xmir_post_to_eventloop(xmir->submit_rendering_handler, win);
+    xmir_post_to_eventloop(xmir->submit_rendering_handler, &win);
 }
 
 /* Submit rendering for @window to Mir
@@ -152,14 +152,16 @@ xmir_create_window(WindowPtr win)
             free (mir_win);
             return FALSE;
         }
-        mir_win->xmir = xmir;
+        dixSetPrivate(&win->devPrivates, &xmir_window_private_key, mir_win);
+        /* This window now has a buffer available */
+        xmir_post_to_eventloop(xmir->submit_rendering_handler, &win);
     }
 
     return ret;
 }
 
 Bool
-xmir_screen_init_window(xmir_screen *xmir, ScreenPtr screen)
+xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir)
 {
     if (!dixRegisterPrivateKey(&xmir_window_private_key, PRIVATE_WINDOW, 0))
         return FALSE;
