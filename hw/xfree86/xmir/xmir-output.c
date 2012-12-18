@@ -136,6 +136,11 @@ output_get_modes(xf86OutputPtr xf86output)
     DisplayModePtr modes;
 
     modes = xf86CVTMode(output->width, output->height, 60, TRUE, FALSE);
+    /* And now, because CVT the CVT standard doesn't support such common resolutions as 1366x768... */
+    /* TODO: We should really get Mir to just send us an EDID or at least enough info to generate one */
+    modes->VDisplay = output->height;
+    modes->HDisplay = output->width;
+
     output->monitor.det_mon[0].type = DS_RANGES;
     ranges = &output->monitor.det_mon[0].section.ranges;
     ranges->min_h = modes->HSync - 10;
