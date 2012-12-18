@@ -195,6 +195,7 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
 {
     MirDisplayInfo display_info;
     xf86OutputPtr xf86output;
+    xf86CrtcPtr xf86crtc;
     struct mir_output *output;
 
     mir_connection_get_display_info(xmir->conn, &display_info);
@@ -204,8 +205,8 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
 
     /* We don't support resizing whatsoever */
     xf86CrtcSetSizeRange(scrn,
-                         display_info.width, display_info.height,
-                         display_info.width, display_info.height);
+                         320, 320,
+                         8192, 8192);
 
     output = malloc(sizeof *output);
     output->width = display_info.width;
@@ -216,7 +217,8 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     xf86output->possible_clones = 1;
     xf86output->driver_private = output;
 
-    xf86CrtcCreate(scrn, &crtc_funcs);
+    xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
+    xf86crtc->driver_private = NULL;
 
     xf86InitialConfiguration(scrn, TRUE);
   
