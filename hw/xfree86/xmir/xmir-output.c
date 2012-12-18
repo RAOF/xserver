@@ -199,7 +199,7 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
                          display_info.width, display_info.height,
                          display_info.width, display_info.height);
 
-    output = calloc(sizeof *output, 1);
+    output = malloc(sizeof *output);
     output->width = display_info.width;
     output->height = display_info.height;
     
