@@ -152,6 +152,9 @@ output_get_modes(xf86OutputPtr xf86output)
     output->monitor.det_mon[2].type = DT;
     output->monitor.det_mon[3].type = DT;
     output->monitor.no_sections = 0;
+    modes->type = M_T_PREFERRED | M_T_DRIVER;
+
+    modes->name = strdup("XMIR mode of death");
 
     xf86output->MonInfo = &output->monitor;
 
