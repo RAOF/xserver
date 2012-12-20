@@ -37,6 +37,7 @@
 #include "xmir.h"
 #include "xmir-private.h"
 
+#include "list.h"
 #include "xf86.h"
 
 #include <mir_client_library.h>
@@ -114,6 +115,7 @@ _X_EXPORT Bool
 xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver)
 {
     xmir->driver = driver;
+    xorg_list_init(&xmir->damage_list);
 
     if (!xmir_mode_pre_init(scrn, xmir))
         return FALSE;
@@ -134,6 +136,16 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
     return TRUE;
 }
 
+_X_EXPORT void
+xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage_proc callback)
+{
+    xmir_window *xmir_win, *tmp_win;
+    xorg_list_for_each_entry_safe(xmir_win, tmp_win, &xmir->damage_list, link_damage) {
+        (*callback)(xmir_win->win, xmir_win->damage);
+        if(!xmir_window_is_dirty(xmir_win->win))
+            xorg_list_del(&xmir_win->link_damage);
+    }
+}
 
 static MODULESETUPPROTO(xMirSetup);
 static MODULETEARDOWNPROTO(xMirTeardown);

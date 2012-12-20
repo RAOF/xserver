@@ -77,4 +77,15 @@ _X_EXPORT int
 xmir_submit_rendering_for_window(WindowPtr win,
                                  RegionPtr region);
 
+_X_EXPORT Bool
+xmir_window_has_free_buffer(WindowPtr win);
+
+_X_EXPORT Bool
+xmir_window_is_dirty(WindowPtr win);
+
+typedef void (*xmir_handle_window_damage_proc)(WindowPtr win, DamagePtr damage);
+
+_X_EXPORT void
+xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage_proc callback);
+
 #endif /* _XMIR_H */
