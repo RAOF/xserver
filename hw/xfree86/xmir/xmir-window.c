@@ -44,11 +44,6 @@
 
 static DevPrivateKeyRec xmir_window_private_key;
 
-typedef struct {
-    xmir_screen *xmir;
-    MirSurface  *surface;
-} xmir_window;
-
 static xmir_window *
 xmir_window_get(WindowPtr win)
 {
@@ -73,8 +68,10 @@ static void
 xmir_handle_buffer_available(void *ctx)
 {
     WindowPtr win = *(WindowPtr *)ctx;
+    xmir_window *mir_win = xmir_window_get(win);
     xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
     
+    mir_win->has_free_buffer = TRUE;
     (*xmir->driver->BufferAvailableForWindow)(win);
 }
 
@@ -101,9 +98,53 @@ xmir_submit_rendering_for_window(WindowPtr win,
 {
     xmir_window *mir_win = xmir_window_get(win);
 
+    mir_win->has_free_buffer = FALSE;
     mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, win);
 
     return Success;
+}
+
+_X_EXPORT Bool
+xmir_window_has_free_buffer(WindowPtr win)
+{
+    xmir_window *xmir_win = xmir_window_get(win);
+
+    return xmir_win->has_free_buffer;
+}
+
+_X_EXPORT Bool
+xmir_window_is_dirty(WindowPtr win)
+{
+    xmir_window *xmir_win = xmir_window_get(win);
+
+    return RegionNotEmpty(DamageRegion(xmir_win->damage));
+}
+
+static void
+damage_report(DamagePtr damage, RegionPtr region, void *ctx)
+{
+    xmir_window *xmir_win = ctx;
+    xmir_screen *xmir = xmir_screen_get(xmir_win->win->drawable.pScreen);
+
+    if (!xmir_window_is_dirty(xmir_win->win))
+        xorg_list_add(&xmir_win->link_damage, &xmir->damage_list);
+}
+
+static void
+damage_destroy(DamagePtr damage, void *ctx)
+{
+}
+
+static void
+xmir_window_enable_damage_tracking(WindowPtr win)
+{
+    xmir_window *xmir_win = xmir_window_get(win);
+
+    xmir_win->damage = DamageCreate(damage_report, damage_destroy,
+                                    DamageReportNonEmpty, FALSE,
+                                    win->drawable.pScreen, xmir_win);
+    DamageRegister(&win->drawable, xmir_win->damage);
+    DamageSetReportAfterOp(xmir_win->damage, TRUE);
 }
 
 static void
@@ -129,10 +170,12 @@ xmir_create_window(WindowPtr win)
      */
     if (win->parent == NULL) {
         MirSurfaceParameters params;
-        xmir_window *mir_win = malloc(sizeof *mir_win);
+        xmir_window *mir_win = calloc(1, sizeof *mir_win);
 
         if (mir_win == NULL)
             return FALSE;
+
+        mir_win->win = win;
 
         params.name = "Xorg";
         params.width = win->drawable.width;
@@ -155,6 +198,7 @@ xmir_create_window(WindowPtr win)
         dixSetPrivate(&win->devPrivates, &xmir_window_private_key, mir_win);
         /* This window now has a buffer available */
         xmir_post_to_eventloop(xmir->submit_rendering_handler, &win);
+        xmir_window_enable_damage_tracking(win);
     }
 
     return ret;

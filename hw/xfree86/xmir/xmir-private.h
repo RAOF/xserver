@@ -36,6 +36,7 @@
 #include <mir_client_library.h>
 #include "xmir.h"
 #include "xf86str.h"
+#include "list.h"
 #include "scrnintstr.h"
 
 typedef struct xmir_marshall_handler xmir_marshall_handler;
@@ -45,7 +46,17 @@ struct xmir_screen {
     CreateWindowProcPtr    CreateWindow;
     xmir_driver *          driver;
     xmir_marshall_handler *submit_rendering_handler;
+    struct xorg_list       damage_list;
 };
+
+typedef struct {
+    WindowPtr           win;
+    MirSurface         *surface;
+    DamagePtr           damage;
+    struct xorg_list    link_damage;
+    Bool                has_free_buffer;
+} xmir_window;
+
 
 xmir_screen *
 xmir_screen_get(ScreenPtr screen);
