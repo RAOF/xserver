@@ -652,19 +652,17 @@ xorg-server (2:1.13.2-0ubuntu1) raring; urgency=low
 
  -- Timo Aaltonen <tjaalton@ubuntu.com>  Tue, 29 Jan 2013 17:23:44 +0200
 
-xorg-server (2:1.13.1.901-0ubuntu2) raring; urgency=low
+xorg-server (2:1.13.0.902-0ubuntu1+xmir2) raring; urgency=low
 
-  * Add 237_dix_save_touchpoint_last_coords_before_transform.patch:
-    Fix sensitive touch settings on Nexus 7 when input is transformed.
-    (LP: #1075415, #1076567, #1076627)
+  * Add mir to xserver-xorg-dev; we need it
 
- -- Bryce Harrington <bryce@ubuntu.com>  Tue, 22 Jan 2013 13:51:16 -0800
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 21 Dec 2012 16:19:16 +1100
 
-xorg-server (2:1.13.1.901-0ubuntu1) raring; urgency=low
+xorg-server (2:1.13.0.902-0ubuntu1+xmir1) raring; urgency=low
 
-  * Merge from unreleased debian git.
+  * Add xmir nested server
 
- -- Timo Aaltonen <tjaalton@ubuntu.com>  Tue, 08 Jan 2013 16:40:30 +0200
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 21 Dec 2012 12:23:35 +1100
 
 xorg-server (2:1.13.0.902-0ubuntu1) raring; urgency=low
 
@@ -684,6 +682,34 @@ xorg-server (2:1.13.0.902-0ubuntu1) raring; urgency=low
     - xf86UpdateDesktopDimensions is newly exported for nvidia blob
 
  -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Fri, 07 Dec 2012 09:14:37 +0100
+
+xorg-server (2:1.13.1.901-0ubuntu2) raring; urgency=low
+
+  * Add 237_dix_save_touchpoint_last_coords_before_transform.patch:
+    Fix sensitive touch settings on Nexus 7 when input is transformed.
+    (LP: #1075415, #1076567, #1076627)
+
+ -- Bryce Harrington <bryce@ubuntu.com>  Tue, 22 Jan 2013 13:51:16 -0800
+
+xorg-server (2:1.13.1.901-0ubuntu1) raring; urgency=low
+
+  * Merge from unreleased debian git.
+
+ -- Timo Aaltonen <tjaalton@ubuntu.com>  Tue, 08 Jan 2013 16:40:30 +0200
+
+xorg-server (2:1.13.1.901-1) UNRELEASED; urgency=low
+
+  [ Maarten Lankhorst ]
+  * New upstream release
+  * Bump minimum required abi, randr, dri2 and gl protos.
+
+  [ Timo Aaltonen ]
+  * Refresh 02_Add-libnettle-as-option-for-sha1.diff.
+  * Remove 03_fix-panning.diff, upstream
+  * Refresh 04_int10-fix-pci_device_read_rom-usage.diff.
+  * Drop 09_EXA-Track...diff, upstream.
+
+ -- Robert Hooker <sarvatt@ubuntu.com>  Wed, 22 Aug 2012 11:12:17 -0400
 
 xorg-server (2:1.13.0-0ubuntu8) raring; urgency=low
 

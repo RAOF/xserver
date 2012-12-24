@@ -160,6 +160,7 @@ confflags_main =	 \
 	--enable-xnest \
 	--enable-kdrive \
 	--enable-xephyr \
+	--enable-xmir \
 	$(build_xfbdev) \
 	$(build_xmir) \
 	--with-sha1=libgcrypt \
