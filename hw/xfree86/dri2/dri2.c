@@ -1104,8 +1104,8 @@ DRI2SwapBuffers(ClientPtr client, DrawablePtr pDraw, CARD64 target_msc,
         return BadDrawable;
     }
 
-    /* Old DDX or no swap interval, just blit */
-    if (!ds->ScheduleSwap || !pPriv->swap_interval || pPriv->prime_id) {
+    /* Old DDX or PRIME, just blit */
+    if (!ds->ScheduleSwap || pPriv->prime_id) {
         BoxRec box;
         RegionRec region;
 
@@ -1127,7 +1127,9 @@ DRI2SwapBuffers(ClientPtr client, DrawablePtr pDraw, CARD64 target_msc,
      * In the simple glXSwapBuffers case, all params will be 0, and we just
      * need to schedule a swap for the last swap target + the swap interval.
      */
-    if (target_msc == 0 && divisor == 0 && remainder == 0) {
+    if (pPriv->swap_interval == 0) {
+        *swap_target = 0;
+    } else if (target_msc == 0 && divisor == 0 && remainder == 0) {
         /* If the current vblank count of the drawable's crtc is lower
          * than the count stored in last_swap_target from a previous swap
          * then reinitialize last_swap_target to the current crtc's msc,
