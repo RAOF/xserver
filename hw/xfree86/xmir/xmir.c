@@ -137,6 +137,18 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
 }
 
 _X_EXPORT void
+xmir_screen_close(ScreenPtr screen, xmir_screen *xmir)
+{
+
+}
+
+_X_EXPORT void
+xmir_screen_destroy(xmir_screen *xmir)
+{
+    
+}
+
+_X_EXPORT void
 xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage_proc callback)
 {
     xmir_window *xmir_win, *tmp_win;

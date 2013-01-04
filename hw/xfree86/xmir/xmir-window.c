@@ -184,7 +184,7 @@ xmir_create_window(WindowPtr win)
          * We'll need to do something smarter here when we're rootless -
          * we'll need to distinguish between ARGB and RGB Visuals.
          */
-        params.pixel_format = mir_pixel_format_rgbx_8888;
+        params.pixel_format = mir_pixel_format_xrgb_8888;
         params.buffer_usage = mir_buffer_usage_hardware;
 
         mir_wait_for(mir_surface_create(xmir->conn,

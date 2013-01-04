@@ -543,18 +543,16 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
 
             if (xorgMir &&
                 (NEED_IO_ENABLED(flags) || !(flags & HW_SKIP_CONSOLE))) {
-                
                 ErrorF("Driver needs flags %lu, incompatible with nested, deleting.\n", flags);
                 xf86DeleteDriver(i);
                 continue;
             }
-                
+
             if (NEED_IO_ENABLED(flags))
                 want_hw_access = TRUE;
 
             if (!(flags & HW_SKIP_CONSOLE))
                 xorgHWOpenConsole = TRUE;
-            }
         }
 
         if (xorgHWOpenConsole)

@@ -70,6 +70,9 @@ xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver);
 _X_EXPORT Bool
 xmir_screen_init(ScreenPtr screen, xmir_screen *xmir);
 
+_X_EXPORT void
+xmir_screen_close(ScreenPtr screen, xmir_screen *xmir);
+
 _X_EXPORT Bool
 xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf);
 

@@ -652,6 +652,25 @@ xorg-server (2:1.13.2-0ubuntu1) raring; urgency=low
 
  -- Timo Aaltonen <tjaalton@ubuntu.com>  Tue, 29 Jan 2013 17:23:44 +0200
 
+xorg-server (2:1.13.0.902-0ubuntu1+xmir5) raring; urgency=low
+
+  * Make xf86DeleteDriver keep xf86NumDrivers correct, and compactify the
+    xf86DriverList. Even fewer SEGVs on init!
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Thu, 03 Jan 2013 15:51:07 +1100
+
+xorg-server (2:1.13.0.902-0ubuntu1+xmir4) raring; urgency=low
+
+  * Mor building! When did rgbx → xrgb happen in the repository?
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Thu, 03 Jan 2013 12:18:07 +1100
+
+xorg-server (2:1.13.0.902-0ubuntu1+xmir3) raring; urgency=low
+
+  * Less SEGV on init
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Mon, 24 Dec 2012 19:02:39 +1100
+
 xorg-server (2:1.13.0.902-0ubuntu1+xmir2) raring; urgency=low
 
   * Add mir to xserver-xorg-dev; we need it

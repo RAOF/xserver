@@ -100,7 +100,14 @@ xf86DeleteDriver(int drvIndex)
         if (xf86DriverList[drvIndex]->module)
             UnloadModule(xf86DriverList[drvIndex]->module);
         free(xf86DriverList[drvIndex]);
-        xf86DriverList[drvIndex] = NULL;
+
+        /* Compact xf86DriverList array, update xf86NumDrivers */
+        xf86NumDrivers--;
+        if(drvIndex != xf86NumDrivers)
+            memmove(xf86DriverList + drvIndex,
+                    xf86DriverList + drvIndex + 1,
+                    sizeof(DriverPtr) * (xf86NumDrivers - drvIndex));
+        realloc(xf86DriverList, xf86NumDrivers * sizeof(DriverPtr));
     }
 }
 
