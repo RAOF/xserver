@@ -1039,8 +1039,7 @@ ProcRenderAddGlyphs(ClientPtr client)
     component_alpha = NeedsComponent(glyphSet->format->format);
 
     if (nglyphs <= NLOCALGLYPH) {
-        memset(glyphsLocal, 0, sizeof(glyphsLocal));
-        glyphsBase = glyphsLocal;
+        glyphsBase = memset(glyphsLocal, 0, nglyphs * sizeof(glyphsLocal[0]));
     }
     else {
         glyphsBase = (GlyphNewPtr) calloc(nglyphs, sizeof(GlyphNewRec));
