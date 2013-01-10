@@ -73,6 +73,9 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir);
 _X_EXPORT void
 xmir_screen_close(ScreenPtr screen, xmir_screen *xmir);
 
+_X_EXPORT void
+xmir_screen_destroy(xmir_screen *xmir);
+
 _X_EXPORT Bool
 xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf);
 
