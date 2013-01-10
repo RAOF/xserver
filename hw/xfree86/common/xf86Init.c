@@ -1462,8 +1462,10 @@ ddxProcessArgument(int argc, char **argv, int i)
         return 1;
     }
     if (!strcmp(argv[i], "-mir")) {
+        CHECK_FOR_REQUIRED_ARGUMENT();
+        mirID = argv[++i];
         xorgMir = TRUE;
-        return 1;
+        return 2;
     }
 
     /* OS-specific processing */
@@ -1538,6 +1540,8 @@ ddxUseMsg(void)
     ErrorF
         ("-novtswitch            don't automatically switch VT at reset & exit\n");
     ErrorF("-sharevts              share VTs with another X server\n");
+    ErrorF
+        ("-mir MirID             run nested in a Mir compositor with app id MirID\n");
     /* OS-specific usage */
     xf86UseMsg();
     ErrorF("\n");

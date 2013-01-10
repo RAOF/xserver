@@ -39,6 +39,7 @@
 
 #include "list.h"
 #include "xf86.h"
+#include "xf86Priv.h"
 
 #include <mir_client_library.h>
 #include <mir_client_library_drm.h>
@@ -94,7 +95,7 @@ xmir_screen_create(ScrnInfoPtr scrn)
         return NULL;
 
     mir_wait_for(mir_connect("/tmp/mir_socket",
-                             "OMG XSERVER",
+                             mirID,
                              handle_connection, xmir));
 
     if (!mir_connection_is_valid(xmir->conn)) {
