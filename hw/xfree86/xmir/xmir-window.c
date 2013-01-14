@@ -101,6 +101,8 @@ xmir_submit_rendering_for_window(WindowPtr win,
     mir_win->has_free_buffer = FALSE;
     mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, win);
 
+    DamageEmpty(mir_win->damage);
+
     return Success;
 }
 
