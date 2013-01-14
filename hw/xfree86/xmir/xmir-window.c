@@ -133,7 +133,6 @@ damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 
     /* TODO: Is there a better way to tell if this element is in a list? */
     if (xorg_list_is_empty(&xmir_win->link_damage)) {
-      xf86Msg(X_INFO, "Adding window to dirty list\n");
         xorg_list_add(&xmir_win->link_damage, &xmir->damage_list);
     }
 }
