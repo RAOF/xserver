@@ -41,6 +41,8 @@
 #include "xf86.h"
 #include "xf86Priv.h"
 
+#include <extinit.h>
+
 #include <mir_client_library.h>
 #include <mir_client_library_drm.h>
 
@@ -117,6 +119,8 @@ xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver)
 {
     xmir->driver = driver;
     xorg_list_init(&xmir->damage_list);
+
+    noScreenSaverExtension = TRUE;
 
     if (!xmir_mode_pre_init(scrn, xmir))
         return FALSE;

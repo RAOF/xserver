@@ -39,6 +39,8 @@
 #include "xmir.h"
 #include "xmir-private.h"
 
+#include "xf86.h"
+
 #include <stdlib.h>
 #include <mir_client_library.h>
 
@@ -101,6 +103,7 @@ xmir_submit_rendering_for_window(WindowPtr win,
     mir_win->has_free_buffer = FALSE;
     mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, win);
 
+    xorg_list_del(&mir_win->link_damage);
     DamageEmpty(mir_win->damage);
 
     return Success;
@@ -128,8 +131,11 @@ damage_report(DamagePtr damage, RegionPtr region, void *ctx)
     xmir_window *xmir_win = ctx;
     xmir_screen *xmir = xmir_screen_get(xmir_win->win->drawable.pScreen);
 
-    if (!xmir_window_is_dirty(xmir_win->win))
+    /* TODO: Is there a better way to tell if this element is in a list? */
+    if (xorg_list_is_empty(&xmir_win->link_damage)) {
+      xf86Msg(X_INFO, "Adding window to dirty list\n");
         xorg_list_add(&xmir_win->link_damage, &xmir->damage_list);
+    }
 }
 
 static void
@@ -142,11 +148,22 @@ xmir_window_enable_damage_tracking(WindowPtr win)
 {
     xmir_window *xmir_win = xmir_window_get(win);
 
+    xorg_list_init(&xmir_win->link_damage);
     xmir_win->damage = DamageCreate(damage_report, damage_destroy,
                                     DamageReportNonEmpty, FALSE,
                                     win->drawable.pScreen, xmir_win);
     DamageRegister(&win->drawable, xmir_win->damage);
     DamageSetReportAfterOp(xmir_win->damage, TRUE);
+}
+
+static void
+xmir_window_disable_damage_tracking(WindowPtr win)
+{
+    xmir_window *xmir_win = xmir_window_get(win);
+
+    xorg_list_del(&xmir_win->link_damage);
+    DamageUnregister(&win->drawable, xmir_win->damage);
+    DamageDestroy(xmir_win->damage);
 }
 
 static void
@@ -202,6 +219,32 @@ xmir_create_window(WindowPtr win)
         xmir_post_to_eventloop(xmir->submit_rendering_handler, &win);
         xmir_window_enable_damage_tracking(win);
     }
+    return ret;
+}
+
+static Bool
+xmir_destroy_window(WindowPtr win)
+{
+    ScreenPtr screen = win->drawable.pScreen;
+    xmir_screen *xmir = xmir_screen_get(screen);
+    Bool ret;
+
+    screen->DestroyWindow = xmir->DestroyWindow;
+    ret = (*screen->DestroyWindow)(win);
+    screen->DestroyWindow = xmir_destroy_window;
+
+    /* Until we support rootless operation, we care only for the root
+     * window, which has no parent.
+     */
+    if (win->parent == NULL) {
+        xmir_window *mir_win = xmir_window_get(win);
+
+	/* We cannot use xmir_window_disable_damage_tracking here because
+	 * the Damage extension will also clean it up on window destruction
+	 */
+	xorg_list_del(&mir_win->link_damage);
+	free(mir_win);
+    }
 
     return ret;
 }
@@ -214,6 +257,8 @@ xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir)
 
     xmir->CreateWindow = screen->CreateWindow;
     screen->CreateWindow = xmir_create_window;
+    xmir->DestroyWindow = screen->DestroyWindow;
+    screen->DestroyWindow = xmir_destroy_window;
 
     xmir->submit_rendering_handler = 
         xmir_register_handler(&xmir_handle_buffer_available,
