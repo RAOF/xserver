@@ -140,6 +140,8 @@ damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 static void
 damage_destroy(DamagePtr damage, void *ctx)
 {
+    xmir_window *xmir_win = ctx;
+    xorg_list_del(&xmir_win->link_damage);
 }
 
 static void
