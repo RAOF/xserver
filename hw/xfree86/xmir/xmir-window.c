@@ -151,7 +151,7 @@ xmir_window_enable_damage_tracking(WindowPtr win)
 
     xorg_list_init(&xmir_win->link_damage);
     xmir_win->damage = DamageCreate(damage_report, damage_destroy,
-                                    DamageReportNonEmpty, FALSE,
+                                    DamageReportNonEmpty, TRUE,
                                     win->drawable.pScreen, xmir_win);
     DamageRegister(&win->drawable, xmir_win->damage);
     DamageSetReportAfterOp(xmir_win->damage, TRUE);
