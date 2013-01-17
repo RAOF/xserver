@@ -92,11 +92,15 @@ handle_connection(MirConnection *connection, void *ctx)
 _X_EXPORT xmir_screen *
 xmir_screen_create(ScrnInfoPtr scrn)
 {
+    const char *socket = "/tmp/mir_socket";
     xmir_screen *xmir = calloc (1, sizeof *xmir);
     if (xmir == NULL)
         return NULL;
 
-    mir_wait_for(mir_connect("/tmp/mir_socket",
+    if (mirSocket != NULL)
+        socket = mirSocket;
+
+    mir_wait_for(mir_connect(socket,
                              mirID,
                              handle_connection, xmir));
 

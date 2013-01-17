@@ -206,3 +206,4 @@ RootWinPropPtr *xf86RegisteredPropertiesTable = NULL;
 Bool xorgHWAccess = FALSE;
 Bool xorgMir = FALSE;
 const char *mirID = NULL;
+const char *mirSocket = NULL;

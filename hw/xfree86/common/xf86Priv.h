@@ -93,6 +93,7 @@ extern _X_EXPORT int xf86Verbose;       /* verbosity level */
 extern _X_EXPORT int xf86LogVerbose;    /* log file verbosity level */
 extern _X_EXPORT Bool xorgMir;
 extern _X_EXPORT const char *mirID;
+extern _X_EXPORT const char *mirSocket;
 
 extern _X_EXPORT RootWinPropPtr *xf86RegisteredPropertiesTable;
 

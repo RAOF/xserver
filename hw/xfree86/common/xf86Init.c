@@ -1467,6 +1467,11 @@ ddxProcessArgument(int argc, char **argv, int i)
         xorgMir = TRUE;
         return 2;
     }
+    if (!strcmp(argv[i], "-mirSocket")) {
+        CHECK_FOR_REQUIRED_ARGUMENT();
+        mirSocket = argv[++i];
+        return 2;
+    }
 
     /* OS-specific processing */
     return xf86ProcessArgument(argc, argv, i);
