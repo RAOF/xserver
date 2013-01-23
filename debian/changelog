@@ -710,6 +710,44 @@ xorg-server (2:1.13.1.901-0ubuntu2) raring; urgency=low
 
  -- Bryce Harrington <bryce@ubuntu.com>  Tue, 22 Jan 2013 13:51:16 -0800
 
+xorg-server (2:1.13.1.901-0ubuntu1+xmir8) raring; urgency=low
+
+  * Build against new, honest-to-goodness libmirclient-dev package.
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 18 Jan 2013 09:26:59 +1100
+
+xorg-server (2:1.13.1.901-0ubuntu1+xmir7) raring; urgency=low
+
+  * Clean the tarball harder; Fix the udeb build.
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 18 Jan 2013 08:01:17 +1100
+
+xorg-server (2:1.13.1.901-0ubuntu1+xmir6) raring; urgency=low
+
+  * Add commandline option to set Mir socket; LightDM sets a non-default socket.
+
+ -- Christopher James Halse Rogers <chris@cooperteam.net>  Thu, 17 Jan 2013 16:42:44 +1100
+
+xorg-server (2:1.13.1.901-0ubuntu1+xmir5) raring; urgency=low
+
+  * Fix some damage issues; now should show *all* the rendering!
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Thu, 17 Jan 2013 10:58:23 +1100
+
+xorg-server (2:1.13.1.901-0ubuntu1+xmir4) raring; urgency=low
+
+  * Because linear history is boring!
+  * Clear damage on submission. This means that xmir only submits rendering
+    in response to something changing onscreen, rather than as fast as possible.
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Tue, 15 Jan 2013 17:15:50 +1100
+
+xorg-server (2:1.13.1.901-0ubuntu1+xmir1) raring; urgency=low
+
+  * Merge in upstream Ubuntuness
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Wed, 09 Jan 2013 10:53:00 +1100
+
 xorg-server (2:1.13.1.901-0ubuntu1) raring; urgency=low
 
   * Merge from unreleased debian git.
