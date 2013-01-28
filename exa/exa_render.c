@@ -621,6 +621,50 @@ exaCompositeRects(CARD8 op,
     }
 }
 
+static PicturePtr
+exaCreateFallbackSource(ScreenPtr pScreen,
+			PicturePtr pPicture,
+			INT16 *x, INT16 *y,
+			CARD16 width, CARD16 height)
+{
+    PixmapPtr pPixmap;
+    PicturePtr pSource;
+    int error;
+    PictFormatPtr pPictFormat;
+
+    if (!pPicture || pPicture->pDrawable)
+	return pPicture;
+
+    if (pPicture->pSourcePict->type == SourcePictTypeSolidFill)
+	return pPicture;
+
+    if (width > 32767 || height > 32767)
+        return 0;
+
+    pPixmap = (*pScreen->CreatePixmap) (pScreen, width, height, 32, 0);
+    if (!pPixmap)
+        return 0;
+
+    pPictFormat = PictureMatchFormat(pScreen, 32, PICT_a8r8g8b8);
+    if (!pPictFormat)
+	return 0;
+
+    pSource = CreatePicture(0, &pPixmap->drawable, pPictFormat,
+			    0, 0, serverClient, &error);
+    (*pScreen->DestroyPixmap) (pPixmap);
+
+    ValidatePicture(pSource);
+
+    ExaCheckComposite(PictOpSrc, pPicture, 0, pSource,
+		      *x, *y,
+		      0, 0,
+		      0, 0,
+		      width, height);
+
+    *x = *y = 0;
+    return pSource;
+}
+
 static int
 exaTryDriverComposite(CARD8 op,
                       PicturePtr pSrc,
@@ -639,17 +683,18 @@ exaTryDriverComposite(CARD8 op,
     int src_off_x, src_off_y, mask_off_x, mask_off_y, dst_off_x, dst_off_y;
     PixmapPtr pSrcPix = NULL, pMaskPix = NULL, pDstPix;
     ExaPixmapPrivPtr pSrcExaPix = NULL, pMaskExaPix = NULL, pDstExaPix;
+    PicturePtr localSrc = pSrc, localMask = pMask;
 
-    if (pSrc->pDrawable) {
-        pSrcPix = exaGetDrawablePixmap(pSrc->pDrawable);
+    if (localSrc->pDrawable) {
+        pSrcPix = exaGetDrawablePixmap(localSrc->pDrawable);
         pSrcExaPix = ExaGetPixmapPriv(pSrcPix);
     }
 
     pDstPix = exaGetDrawablePixmap(pDst->pDrawable);
     pDstExaPix = ExaGetPixmapPriv(pDstPix);
 
-    if (pMask && pMask->pDrawable) {
-        pMaskPix = exaGetDrawablePixmap(pMask->pDrawable);
+    if (localMask && localMask->pDrawable) {
+        pMaskPix = exaGetDrawablePixmap(localMask->pDrawable);
         pMaskExaPix = ExaGetPixmapPriv(pMaskPix);
     }
 
@@ -667,24 +712,46 @@ exaTryDriverComposite(CARD8 op,
     yDst += pDst->pDrawable->y;
 
     if (pMaskPix) {
-        xMask += pMask->pDrawable->x;
-        yMask += pMask->pDrawable->y;
+        xMask += localMask->pDrawable->x;
+        yMask += localMask->pDrawable->y;
     }
 
     if (pSrcPix) {
-        xSrc += pSrc->pDrawable->x;
-        ySrc += pSrc->pDrawable->y;
+        xSrc += localSrc->pDrawable->x;
+        ySrc += localSrc->pDrawable->y;
     }
 
-    if (pExaScr->info->CheckComposite &&
-        !(*pExaScr->info->CheckComposite) (op, pSrc, pMask, pDst)) {
-        return -1;
-    }
-
-    if (!miComputeCompositeRegion(&region, pSrc, pMask, pDst,
+    if (!miComputeCompositeRegion(&region, localSrc, localMask, pDst,
                                   xSrc, ySrc, xMask, yMask, xDst, yDst,
                                   width, height))
         return 1;
+
+    if (pExaScr->info->CheckComposite &&
+	!(*pExaScr->info->CheckComposite) (op, localSrc, localMask, pDst)) {
+	    ScreenPtr pScreen = pDst->pDrawable->pScreen;
+	localSrc = exaCreateFallbackSource (pScreen, localSrc,
+					    &xSrc, &ySrc, width, height);
+	localMask = exaCreateFallbackSource (pScreen, localMask,
+					     &xMask, &yMask, width, height);
+	if (pExaScr->info->CheckComposite &&
+	    !(*pExaScr->info->CheckComposite) (op, localSrc, localMask, pDst)) {
+	    if (localSrc != pSrc)
+		FreePicture(localSrc, 0);
+	    if (localMask != pMask)
+		FreePicture(localMask, 0);
+	    return -1;
+	}
+
+	if (localSrc != pSrc) {
+	    pSrcPix = exaGetDrawablePixmap(localSrc->pDrawable);
+	    pSrcExaPix = ExaGetPixmapPriv(pSrcPix);
+	}
+
+	if (localMask != pMask) {
+	    pMaskPix = exaGetDrawablePixmap(localMask->pDrawable);
+	    pMaskExaPix = ExaGetPixmapPriv(pMaskPix);
+	}
+    }
 
     exaGetDrawableDeltas(pDst->pDrawable, pDstPix, &dst_off_x, &dst_off_y);
 
@@ -721,29 +788,45 @@ exaTryDriverComposite(CARD8 op,
 
     if (pSrcPix) {
         pSrcPix =
-            exaGetOffscreenPixmap(pSrc->pDrawable, &src_off_x, &src_off_y);
+            exaGetOffscreenPixmap(localSrc->pDrawable, &src_off_x, &src_off_y);
         if (!pSrcPix) {
+	    if (localSrc != pSrc)
+		FreePicture(localSrc, 0);
+	    if (localMask != pMask)
+		FreePicture(localMask, 0);
             RegionUninit(&region);
             return 0;
         }
     }
 
     if (pMaskPix) {
-        pMaskPix = exaGetOffscreenPixmap(pMask->pDrawable, &mask_off_x,
+        pMaskPix = exaGetOffscreenPixmap(localMask->pDrawable, &mask_off_x,
                                          &mask_off_y);
         if (!pMaskPix) {
+	    if (localSrc != pSrc)
+		FreePicture(localSrc, 0);
+	    if (localMask != pMask)
+		FreePicture(localMask, 0);
             RegionUninit(&region);
             return 0;
         }
     }
 
     if (!exaPixmapHasGpuCopy(pDstPix)) {
+	if (localSrc != pSrc)
+	    FreePicture(localSrc, 0);
+	if (localMask != pMask)
+	    FreePicture(localMask, 0);
         RegionUninit(&region);
         return 0;
     }
 
-    if (!(*pExaScr->info->PrepareComposite) (op, pSrc, pMask, pDst, pSrcPix,
-                                             pMaskPix, pDstPix)) {
+    if (!(*pExaScr->info->PrepareComposite) (op, localSrc, localMask, pDst,
+					     pSrcPix, pMaskPix, pDstPix)) {
+	if (localSrc != pSrc)
+	    FreePicture(localSrc, 0);
+	if (localMask != pMask)
+	    FreePicture(localMask, 0);
         RegionUninit(&region);
         return -1;
     }
@@ -771,6 +854,10 @@ exaTryDriverComposite(CARD8 op,
     (*pExaScr->info->DoneComposite) (pDstPix);
     exaMarkSync(pDst->pDrawable->pScreen);
 
+    if (localSrc != pSrc)
+	FreePicture(localSrc, 0);
+    if (localMask != pMask)
+	FreePicture(localMask, 0);
     RegionUninit(&region);
     return 1;
 }
