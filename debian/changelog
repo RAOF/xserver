@@ -453,6 +453,12 @@ xorg-server (2:1.14.1-0ubuntu0.7) saucy; urgency=low
 
  -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Wed, 03 Jul 2013 10:37:30 +0200
 
+xorg-server (2:1.14.1-0ubuntu0.6+xmir1) saucy; urgency=low
+
+  * Rebase on soon-to-be released Saucy packages
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 28 Jun 2013 15:16:36 +1000
+
 xorg-server (2:1.14.1-0ubuntu0.6) saucy; urgency=low
 
   * Add patch to fix nvidia regression.
