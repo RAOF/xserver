@@ -1,3 +1,10 @@
+xorg-server (2:1.7.7-15) UNRELEASED; urgency=low
+
+  * Link against -lbsd on kfreebsd to get access to getpeereid() and make
+    MIT-SHM work with non-world-accessible segments.
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 23 Feb 2013 10:13:16 +0100
+
 xorg-server (2:1.7.7-14) squeeze; urgency=low
 
   * GLX: add missing input sanitization (CVE-2010-4818).  Also fix a couple
