@@ -52,18 +52,16 @@ xmir_window_get(WindowPtr win)
     return dixLookupPrivate(&win->devPrivates, &xmir_window_private_key);
 }
 
-_X_EXPORT Bool
-xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf)
+_X_EXPORT int
+mir_prime_fd_for_window(WindowPtr win)
 {
     xmir_window *xmir_win = xmir_window_get(win);
     MirBufferPackage package;
 
     mir_surface_get_current_buffer(xmir_win->surface, &package);
-    assert(package.data_items == 1);
-        
-    buf->name = package.data[0];
-    buf->stride = package.stride;
-    return TRUE;
+    assert(package.fd_items == 1);
+
+    return package.fd[0];
 }
 
 static void

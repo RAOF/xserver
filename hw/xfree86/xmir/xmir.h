@@ -50,11 +50,6 @@ typedef struct {
     xmir_buffer_available_proc BufferAvailableForWindow;
 } xmir_driver;
 
-typedef struct {
-    uint32_t name;
-    uint32_t stride;
-} xmir_buffer_info;
-
 _X_EXPORT int
 xmir_get_drm_fd(xmir_screen *screen);
 
@@ -76,8 +71,8 @@ xmir_screen_close(ScreenPtr screen, xmir_screen *xmir);
 _X_EXPORT void
 xmir_screen_destroy(xmir_screen *xmir);
 
-_X_EXPORT Bool
-xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf);
+_X_EXPORT int
+xmir_prime_fd_for_window(WindowPtr win);
 
 _X_EXPORT int
 xmir_submit_rendering_for_window(WindowPtr win,
