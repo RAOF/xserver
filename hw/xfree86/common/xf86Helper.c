@@ -107,7 +107,7 @@ xf86DeleteDriver(int drvIndex)
             memmove(xf86DriverList + drvIndex,
                     xf86DriverList + drvIndex + 1,
                     sizeof(DriverPtr) * (xf86NumDrivers - drvIndex));
-        realloc(xf86DriverList, xf86NumDrivers * sizeof(DriverPtr));
+        xf86DriverList = realloc(xf86DriverList, xf86NumDrivers * sizeof(DriverPtr));
     }
 }
 
