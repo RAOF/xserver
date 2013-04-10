@@ -31,7 +31,6 @@
  */
 
 #include <stdlib.h>
-#include <mir_client_library.h>
 
 #include "xmir-private.h"
 #include "xf86Crtc.h"

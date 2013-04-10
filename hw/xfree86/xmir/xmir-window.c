@@ -42,7 +42,6 @@
 #include "xf86.h"
 
 #include <stdlib.h>
-#include <mir_client_library.h>
 
 static DevPrivateKeyRec xmir_window_private_key;
 
@@ -53,7 +52,7 @@ xmir_window_get(WindowPtr win)
 }
 
 _X_EXPORT int
-mir_prime_fd_for_window(WindowPtr win)
+xmir_prime_fd_for_window(WindowPtr win)
 {
     xmir_window *xmir_win = xmir_window_get(win);
     MirBufferPackage package;

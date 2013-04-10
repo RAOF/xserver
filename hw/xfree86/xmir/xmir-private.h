@@ -33,7 +33,7 @@
 #ifndef _XMIR_PRIVATE_H
 #define _XMIR_PRIVATE_H
 
-#include <mir_client_library.h>
+#include <mir_toolkit/mir_client_library.h>
 #include "xmir.h"
 #include "xf86str.h"
 #include "list.h"

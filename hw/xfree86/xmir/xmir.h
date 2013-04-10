@@ -34,7 +34,7 @@
 #define _XMIR_H
 
 #include <stdint.h>
-#include <mir_client_library.h>
+#include <mir_toolkit/mir_client_library.h>
 
 #include "xf86str.h"
 #include "scrnintstr.h"

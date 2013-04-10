@@ -41,8 +41,8 @@
 #include "xf86.h"
 #include "xf86Priv.h"
 
-#include <mir_client_library.h>
-#include <mir_client_library_drm.h>
+#include <mir_toolkit/mir_client_library.h>
+#include <mir_toolkit/mir_client_library_drm.h>
 
 static DevPrivateKeyRec xmir_screen_private_key;
 
