@@ -1,0 +1,33 @@
+From 88394b5cf39f298ebaa9a8ce4ace9bef14c2c6ee Mon Sep 17 00:00:00 2001
+From: Dave Airlie <airlied@gmail.com>
+Date: Wed, 10 Apr 2013 16:09:01 +1000
+Subject: [PATCH] xf86: fix flush input to work with Linux evdev devices.
+
+So when we VT switch back and attempt to flush the input devices,
+we don't succeed because evdev won't return part of an event,
+since we were only asking for 4 bytes, we'd only get -EINVAL back.
+
+This could later cause events to be flushed that we shouldn't have
+gotten.
+
+This is a fix for CVE-2013-1940.
+
+Signed-off-by: Dave Airlie <airlied@redhat.com>
+---
+ hw/xfree86/os-support/shared/posix_tty.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+Index: xorg-server/hw/xfree86/os-support/shared/posix_tty.c
+===================================================================
+--- xorg-server.orig/hw/xfree86/os-support/shared/posix_tty.c
++++ xorg-server/hw/xfree86/os-support/shared/posix_tty.c
+@@ -475,7 +475,8 @@ xf86FlushInput(int fd)
+ {
+ 	fd_set fds;
+ 	struct timeval timeout;
+-	char c[4];
++	/* this needs to be big enough to flush an evdev event. */
++	char c[126];
+ 
+ 	DebugF("FlushingSerial\n");
+ 	if (tcflush(fd, TCIFLUSH) == 0)
