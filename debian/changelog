@@ -1,10 +1,17 @@
-xorg-server (2:1.7.7-14+squeeze1) UNRELEASED; urgency=high
+xorg-server (2:1.7.7-16) UNRELEASED; urgency=high
 
   * xfree86: fix flush input to work with Linux evdev devices.  Avoids
     processing events sent when the server was inactive, potentially allowing
     a user to capture passwords.  Addresses CVE-2013-1940.
 
  -- Julien Cristau <jcristau@debian.org>  Fri, 12 Apr 2013 15:13:24 +0200
+
+xorg-server (2:1.7.7-15) squeeze; urgency=low
+
+  * Link against -lbsd on kfreebsd to get access to getpeereid() and make
+    MIT-SHM work with non-world-accessible segments.
+
+ -- Julien Cristau <jcristau@debian.org>  Wed, 13 Mar 2013 21:27:46 +0100
 
 xorg-server (2:1.7.7-14) squeeze; urgency=low
 
