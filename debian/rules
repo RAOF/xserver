@@ -298,8 +298,8 @@ endif
 
 	install -m 755 debian/local/xvfb-run debian/tmp/main/usr/bin
 	# Make sure Xvfb at least starts up
-	PATH=debian/tmp/main/usr/bin/:/bin:/usr/bin \
-	  debian/tmp/main/usr/bin/xvfb-run -s "-screen 0 1280x1024x24 -nolisten tcp -noreset" true
+#	PATH=debian/tmp/main/usr/bin/:/bin:/usr/bin \
+#	  debian/tmp/main/usr/bin/xvfb-run -s "-screen 0 1280x1024x24 -nolisten tcp -noreset" true
 
 	install debian/local/xvfb-run.1 debian/tmp/main/usr/share/man/man1
 ifneq ($(DEB_HOST_ARCH_OS), linux)
