@@ -204,10 +204,10 @@ xmir_create_window(WindowPtr win)
         params.pixel_format = mir_pixel_format_xrgb_8888;
         params.buffer_usage = mir_buffer_usage_hardware;
 
-        mir_wait_for(mir_surface_create(xmir->conn,
-                                        &params,
-                                        &handle_surface_create,
-                                        mir_win));
+        mir_wait_for(mir_connection_create_surface(xmir->conn,
+                                                   &params,
+                                                   &handle_surface_create,
+                                                   mir_win));
         if (mir_win->surface == NULL) {
             free (mir_win);
             return FALSE;
