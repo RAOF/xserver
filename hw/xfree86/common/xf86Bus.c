@@ -305,7 +305,7 @@ xf86DriverHasEntities(DriverPtr drvp)
     int i;
 
     for (i = 0; i < xf86NumEntities; i++) {
-        if (xf86Entities[i]->driver == drvp)
+        if (xf86Entities[i]->driver == drvp && xf86Entities[i]->numInstances)
             return TRUE;
     }
     return FALSE;
