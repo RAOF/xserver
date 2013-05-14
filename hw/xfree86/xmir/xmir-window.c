@@ -55,12 +55,14 @@ _X_EXPORT int
 xmir_prime_fd_for_window(WindowPtr win)
 {
     xmir_window *xmir_win = xmir_window_get(win);
-    MirBufferPackage package;
+    MirBufferPackage *package;
+
+    assert(mir_platform_type_gbm == mir_surface_get_platform_type(xmir_win->surface));
 
     mir_surface_get_current_buffer(xmir_win->surface, &package);
-    assert(package.fd_items == 1);
+    assert(package->fd_items == 1);
 
-    return package.fd[0];
+    return package->fd[0];
 }
 
 static void
