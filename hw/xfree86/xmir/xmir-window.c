@@ -155,7 +155,7 @@ xmir_window_enable_damage_tracking(WindowPtr win)
     DamageRegister(&win->drawable, xmir_win->damage);
     DamageSetReportAfterOp(xmir_win->damage, TRUE);
 }
-
+/*
 static void
 xmir_window_disable_damage_tracking(WindowPtr win)
 {
@@ -165,7 +165,7 @@ xmir_window_disable_damage_tracking(WindowPtr win)
     DamageUnregister(&win->drawable, xmir_win->damage);
     DamageDestroy(xmir_win->damage);
 }
-
+*/
 static void
 handle_surface_create(MirSurface *surface, void *ctx)
 {
