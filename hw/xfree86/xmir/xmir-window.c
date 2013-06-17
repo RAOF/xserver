@@ -100,7 +100,7 @@ xmir_submit_rendering_for_window(WindowPtr win,
     xmir_window *mir_win = xmir_window_get(win);
 
     mir_win->has_free_buffer = FALSE;
-    mir_surface_next_buffer(mir_win->surface, &handle_buffer_received, win);
+    mir_surface_swap_buffers(mir_win->surface, &handle_buffer_received, win);
 
     xorg_list_del(&mir_win->link_damage);
     DamageEmpty(mir_win->damage);
