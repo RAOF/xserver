@@ -150,7 +150,6 @@ WaitForSomething(int *pClientsReady)
     fd_set clientsReadable;
     fd_set clientsWritable;
     int curclient;
-    int selecterr;
     static int nready;
     fd_set devicesReadable;
     CARD32 now = 0;
@@ -220,12 +219,12 @@ WaitForSomething(int *pClientsReady)
         else {
             i = Select(MaxClients, &LastSelectMask, NULL, NULL, wt);
         }
-        selecterr = GetErrno();
         WakeupHandler(i, (pointer) &LastSelectMask);
         if (i <= 0) {           /* An error or timeout occurred */
             if (dispatchException)
                 return 0;
             if (i < 0) {
+		int selecterr = GetErrno();
                 if (selecterr == EBADF) {       /* Some client disconnected */
                     CheckConnections();
                     if (!XFD_ANYSET(&AllClients))
