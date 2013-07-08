@@ -45,6 +45,17 @@
 #include <mir_toolkit/mir_client_library_drm.h>
 
 static DevPrivateKeyRec xmir_screen_private_key;
+/* 
+ * We have only a single Mir connection, regardless of how many
+ * drivers load.
+ */
+static MirConnection *conn;
+
+MirConnection *
+xmir_connection_get(void)
+{
+    return conn;
+}
 
 xmir_screen *
 xmir_screen_get(ScreenPtr screen)
@@ -57,7 +68,7 @@ xmir_get_drm_fd(xmir_screen *screen)
 {
     MirPlatformPackage platform;
 
-    mir_connection_get_platform(screen->conn, &platform);
+    mir_connection_get_platform(conn, &platform);
     assert(platform.fd_items == 1);
     return platform.fd[0];
 }
@@ -73,47 +84,21 @@ _X_EXPORT int
 xmir_auth_drm_magic(xmir_screen *xmir, uint32_t magic)
 {
     int status;
-    mir_wait_for(mir_connection_drm_auth_magic(xmir->conn,
+    mir_wait_for(mir_connection_drm_auth_magic(xmir_connection_get(),
                                                magic,
                                                &handle_auth_magic,
                                                &status));
     return status;
 }
 
-static void
-handle_connection(MirConnection *connection, void *ctx)
-{
-    xmir_screen *xmir = ctx;
-    xmir->conn = connection;
-}
-
 _X_EXPORT xmir_screen *
 xmir_screen_create(ScrnInfoPtr scrn)
 {
-    const char *socket = "/tmp/mir_socket";
     xmir_screen *xmir = calloc (1, sizeof *xmir);
     if (xmir == NULL)
         return NULL;
 
-    if (mirSocket != NULL)
-        socket = mirSocket;
-
-    mir_wait_for(mir_connect(socket,
-                             mirID,
-                             handle_connection, xmir));
-
-    if (!mir_connection_is_valid(xmir->conn)) {
-        xf86Msg(X_ERROR,
-                "Failed to connect to Mir: %s\n",
-                mir_connection_get_error_message(xmir->conn));
-        goto error;
-    }
-
     return xmir;
-error:
-    if (xmir)
-        free(xmir);
-    return NULL;
 }
 
 _X_EXPORT Bool
@@ -186,10 +171,26 @@ static pointer
 xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
     static Bool setupDone = FALSE;
+    const char *socket = "/tmp/mir_socket";
     
     if (setupDone) {
         if (errmaj)
             *errmaj = LDR_ONCEONLY;
+        return NULL;
+    }
+
+
+    if (mirSocket != NULL)
+        socket = mirSocket;
+
+    conn = mir_connect_sync(socket, mirID);
+
+    if (!mir_connection_is_valid(conn)) {
+        if (errmaj)
+            *errmaj = LDR_MODSPECIFIC;
+        xf86Msg(X_ERROR,
+                "Failed to connect to Mir: %s\n",
+                mir_connection_get_error_message(conn));
         return NULL;
     }
 

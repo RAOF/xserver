@@ -42,7 +42,6 @@
 typedef struct xmir_marshall_handler xmir_marshall_handler;
 
 struct xmir_screen {
-    MirConnection *		   conn;
     CreateWindowProcPtr    CreateWindow;
     DestroyWindowProcPtr   DestroyWindow;
     xmir_driver *          driver;
@@ -58,6 +57,8 @@ typedef struct {
     Bool                has_free_buffer;
 } xmir_window;
 
+MirConnection *
+xmir_connection_get(void);
 
 xmir_screen *
 xmir_screen_get(ScreenPtr screen);

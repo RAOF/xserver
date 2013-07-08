@@ -197,7 +197,7 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     xf86CrtcPtr xf86crtc;
     struct mir_output *output;
 
-    mir_connection_get_display_info(xmir->conn, &display_info);
+    mir_connection_get_display_info(xmir_connection_get(), &display_info);
     
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
