@@ -41,6 +41,9 @@
 #include "xf86.h"
 #include "xf86Priv.h"
 
+#include <xf86drm.h>
+#include <string.h>
+
 #include <mir_toolkit/mir_client_library.h>
 #include <mir_toolkit/mir_client_library_drm.h>
 
@@ -64,13 +67,20 @@ xmir_screen_get(ScreenPtr screen)
 }
 
 _X_EXPORT int
-xmir_get_drm_fd(xmir_screen *screen)
+xmir_get_drm_fd(const char *busid)
 {
     MirPlatformPackage platform;
+    int i, fd = -1;
 
     mir_connection_get_platform(conn, &platform);
-    assert(platform.fd_items == 1);
-    return platform.fd[0];
+
+    for (i = 0; i < platform.fd_items; ++i) {
+        char *fd_busid = drmGetBusid(platform.fd[i]);
+        if (!strcasecmp(busid, fd_busid))
+            fd = platform.fd[i];
+        drmFreeBusid(fd_busid);
+    }
+    return fd;
 }
 
 static void

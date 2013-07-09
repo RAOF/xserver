@@ -51,7 +51,7 @@ typedef struct {
 } xmir_driver;
 
 _X_EXPORT int
-xmir_get_drm_fd(xmir_screen *screen);
+xmir_get_drm_fd(const char *busid);
 
 _X_EXPORT int
 xmir_auth_drm_magic(xmir_screen *xmir, uint32_t magic);
