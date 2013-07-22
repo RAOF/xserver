@@ -25,15 +25,20 @@ if INT10MODULE
 INT10_SUBDIR = int10
 endif
 
+if XMIR
+XMIR_SUBDIR = xmir
+endif
+
 SUBDIRS = common ddc x86emu $(INT10_SUBDIR) os-support parser \
 	  ramdac $(VGAHW_SUBDIR) loader modes $(DRI_SUBDIR) \
 	  $(DRI2_SUBDIR) . $(VBE_SUBDIR) i2c dixmods \
-	  fbdevhw shadowfb exa $(XF86UTILS_SUBDIR) doc man
+	  fbdevhw shadowfb exa $(XF86UTILS_SUBDIR) doc man \
+	  $(XMIR_SUBDIR)
 
 DIST_SUBDIRS = common ddc i2c x86emu int10 fbdevhw os-support \
                parser ramdac shadowfb vbe vgahw \
                loader dixmods dri dri2 exa modes \
-	       utils doc man
+	       utils doc man xmir
 
 bin_PROGRAMS = Xorg
 nodist_Xorg_SOURCES = sdksyms.c

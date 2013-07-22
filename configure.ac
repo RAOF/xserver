@@ -635,6 +635,7 @@ AC_ARG_ENABLE(windowswm,      AS_HELP_STRING([--enable-windowswm], [Build XWin w
 AC_ARG_ENABLE(libdrm,         AS_HELP_STRING([--enable-libdrm], [Build Xorg with libdrm support (default: enabled)]), [DRM=$enableval],[DRM=yes])
 AC_ARG_ENABLE(clientids,      AS_HELP_STRING([--disable-clientids], [Build Xorg with client ID tracking (default: enabled)]), [CLIENTIDS=$enableval], [CLIENTIDS=yes])
 AC_ARG_ENABLE(pciaccess, AS_HELP_STRING([--enable-pciaccess], [Build Xorg with pciaccess library (default: enabled)]), [PCI=$enableval], [PCI=yes])
+AC_ARG_ENABLE(xmir,           AS_HELP_STRING([--enable-xmir], [Build support for nesting in Mir (default: auto)]), [XMIR=$enableval], [XMIR=auto])
 
 dnl DDXes.
 AC_ARG_ENABLE(xorg,    	      AS_HELP_STRING([--enable-xorg], [Build Xorg server (default: auto)]), [XORG=$enableval], [XORG=auto])
@@ -1147,6 +1148,15 @@ if test "x$XINERAMA" = xyes; then
 	REQUIRED_MODULES="$REQUIRED_MODULES $XINERAMAPROTO"
 	SDK_REQUIRED_MODULES="$SDK_REQUIRED_MODULES $XINERAMAPROTO"
 fi
+
+if test "x$XMIR" != xno; then
+	PKG_CHECK_MODULES([XMIR], [mirclient], [XMIR=yes], [XMIR=no])
+	AC_SUBST([XMIR_LIBS])
+        AC_SUBST([XMIR_CFLAGS])
+        AC_DEFINE(XMIR, 1, [Support wayland mode])
+	SDK_REQUIRED_MODULES="$SDK_REQUIRED_MODULES mirclient"
+fi	      
+AM_CONDITIONAL(XMIR, [test "x$XMIR" = xyes])
 
 AM_CONDITIONAL(XACE, [test "x$XACE" = xyes])
 if test "x$XACE" = xyes; then
@@ -2299,6 +2309,7 @@ hw/xfree86/utils/Makefile
 hw/xfree86/utils/man/Makefile
 hw/xfree86/utils/cvt/Makefile
 hw/xfree86/utils/gtf/Makefile
+hw/xfree86/xmir/Makefile
 hw/dmx/config/Makefile
 hw/dmx/config/man/Makefile
 hw/dmx/doc/Makefile

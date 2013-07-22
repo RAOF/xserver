@@ -212,4 +212,7 @@
 #define _XSERVER64 1
 #endif
 
+/* Build XMIR nested server */
+#undef XMIR
+
 #endif /* _XORG_SERVER_H_ */

@@ -541,6 +541,13 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
                                               GET_REQUIRED_HW_INTERFACES,
                                               &flags);
 
+            if (xorgMir &&
+                (NEED_IO_ENABLED(flags) || !(flags & HW_SKIP_CONSOLE))) {
+                ErrorF("Driver needs flags %lu, incompatible with nested, deleting.\n", flags);
+                xf86DeleteDriver(i);
+                continue;
+            }
+
             if (NEED_IO_ENABLED(flags))
                 want_hw_access = TRUE;
 
@@ -1458,6 +1465,17 @@ ddxProcessArgument(int argc, char **argv, int i)
         xf86Info.ShareVTs = TRUE;
         return 1;
     }
+    if (!strcmp(argv[i], "-mir")) {
+        CHECK_FOR_REQUIRED_ARGUMENT();
+        mirID = argv[++i];
+        xorgMir = TRUE;
+        return 2;
+    }
+    if (!strcmp(argv[i], "-mirSocket")) {
+        CHECK_FOR_REQUIRED_ARGUMENT();
+        mirSocket = argv[++i];
+        return 2;
+    }
 
     /* OS-specific processing */
     return xf86ProcessArgument(argc, argv, i);
@@ -1531,6 +1549,8 @@ ddxUseMsg(void)
     ErrorF
         ("-novtswitch            don't automatically switch VT at reset & exit\n");
     ErrorF("-sharevts              share VTs with another X server\n");
+    ErrorF
+        ("-mir MirID             run nested in a Mir compositor with app id MirID\n");
     /* OS-specific usage */
     xf86UseMsg();
     ErrorF("\n");
