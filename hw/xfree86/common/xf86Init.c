@@ -530,7 +530,7 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
          * needed at this early stage.
          */
 
-        for (i = 0; i < xf86NumDrivers; ) {
+        for (i = 0; i < xf86NumDrivers; i++) {
             xorgHWFlags flags = HW_IO;
 
             if (xf86DriverList[i]->Identify != NULL)
@@ -553,8 +553,6 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
 
             if (!(flags & HW_SKIP_CONSOLE))
                 xorgHWOpenConsole = TRUE;
-
-            i++;
         }
 
         if (xorgHWOpenConsole)
@@ -640,11 +638,9 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
         }
 
         /* Remove (unload) drivers that are not required */
-        for (i = 0; i < xf86NumDrivers; )
+        for (i = 0; i < xf86NumDrivers; i++)
             if (xf86DriverList[i] && xf86DriverList[i]->refCount <= 0)
                 xf86DeleteDriver(i);
-            else
-                i++;
 
         /*
          * At this stage we know how many screens there are.
