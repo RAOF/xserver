@@ -184,6 +184,14 @@ __xorg_list_del(struct xorg_list *prev, struct xorg_list *next)
     prev->next = next;
 }
 
+static inline void
+xorg_list_move(struct xorg_list *entry, struct xorg_list *head)
+{
+    __xorg_list_del(entry->prev, entry->next);
+    __xorg_list_add(entry, head->prev, head);
+}
+
+
 /**
  * Remove the element from the list it is in. Using this function will reset
  * the pointers to/from this element so it is removed from the list. It does
