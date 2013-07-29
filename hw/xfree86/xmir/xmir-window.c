@@ -98,16 +98,18 @@ xmir_submit_rendering_for_window(WindowPtr win,
                                  RegionPtr region)
 {
     xmir_window *mir_win = xmir_window_get(win);
+    RegionPtr tracking;
 
     mir_win->has_free_buffer = FALSE;
     mir_surface_swap_buffers(mir_win->surface, &handle_buffer_received, win);
 
     xorg_list_del(&mir_win->link_damage);
 
+    tracking = &mir_win->past_damage[mir_win->damage_index];
     if (region == NULL)
-        RegionEmpty(&mir_win->past_damage[mir_win->damage_index]);
+        RegionEmpty(tracking);
     else
-        RegionSubtract(&mir_win->past_damage[mir_win->damage_index], &mir_win->past_damage[mir_win->damage_index], region);
+        RegionSubtract(tracking, tracking, region);
 
     return Success;
 }
