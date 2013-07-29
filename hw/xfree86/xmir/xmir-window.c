@@ -49,7 +49,7 @@ static DevPrivateKeyRec xmir_window_private_key;
 static xmir_window *
 xmir_window_get(WindowPtr win)
 {
-    return dixLookupPrivate(&win->devPrivates, &xmir_window_private_key);
+    return dixGetPrivate(&win->devPrivates, &xmir_window_private_key);
 }
 
 _X_EXPORT int
