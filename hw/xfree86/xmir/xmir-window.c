@@ -36,6 +36,7 @@
 #include <xorg-server.h>
 #include "windowstr.h"
 #include "regionstr.h"
+#include "damagestr.h"
 
 #include "xmir.h"
 #include "xmir-private.h"
@@ -45,6 +46,7 @@
 #include <stdlib.h>
 
 static DevPrivateKeyRec xmir_window_private_key;
+static const RegionRec xmir_empty_region = { {0, 0, 0, 0}, &RegionBrokenData };
 
 static xmir_window *
 xmir_window_get(WindowPtr win)
@@ -72,7 +74,7 @@ xmir_handle_buffer_available(void *ctx)
     WindowPtr win = *(WindowPtr *)ctx;
     xmir_window *mir_win = xmir_window_get(win);
     xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
-    
+
     mir_win->has_free_buffer = TRUE;
     mir_win->damage_index = (mir_win->damage_index + 1) % MIR_MAX_BUFFER_AGE;
 
@@ -86,40 +88,6 @@ handle_buffer_received(MirSurface *surf, void *ctx)
     xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
 
     xmir_post_to_eventloop(xmir->submit_rendering_handler, &win);
-}
-
-/* Submit rendering for @window to Mir
- * @region is an (optional) damage region, to hint the compositor as to what
- * region has changed. It can be NULL to indicate the whole window should be
- * considered dirty.
- */
-_X_EXPORT int
-xmir_submit_rendering_for_window(WindowPtr win,
-                                 RegionPtr region)
-{
-    xmir_window *mir_win = xmir_window_get(win);
-    RegionPtr tracking;
-
-    mir_win->has_free_buffer = FALSE;
-    mir_surface_swap_buffers(mir_win->surface, &handle_buffer_received, win);
-
-    xorg_list_del(&mir_win->link_damage);
-
-    tracking = &mir_win->past_damage[mir_win->damage_index];
-    if (region == NULL)
-        RegionEmpty(tracking);
-    else
-        RegionSubtract(tracking, tracking, region);
-
-    return Success;
-}
-
-_X_EXPORT Bool
-xmir_window_has_free_buffer(WindowPtr win)
-{
-    xmir_window *xmir_win = xmir_window_get(win);
-
-    return xmir_win->has_free_buffer;
 }
 
 static inline int
@@ -142,10 +110,60 @@ damage_region_for_current_buffer(xmir_window *xmir_win)
     return &xmir_win->past_damage[index_in_damage_buffer(xmir_win->damage_index, age)];
 }
 
+/* Submit rendering for @window to Mir
+ * @region is an (optional) damage region, to hint the compositor as to what
+ * region has changed. It can be NULL to indicate the whole window should be
+ * considered dirty.
+ */
+_X_EXPORT int
+xmir_submit_rendering_for_window(WindowPtr win,
+                                 RegionPtr region)
+{
+    xmir_window *mir_win = xmir_window_get(win);
+    RegionPtr tracking;
+
+    mir_win->has_free_buffer = FALSE;
+    mir_surface_swap_buffers(mir_win->surface, &handle_buffer_received, win);
+
+    xorg_list_del(&mir_win->link_damage);
+
+    tracking = damage_region_for_current_buffer(mir_win);
+    if (region == NULL)
+        RegionEmpty(tracking);
+    else
+        RegionSubtract(tracking, tracking, region);
+
+    return Success;
+}
+
+_X_EXPORT Bool
+xmir_window_has_free_buffer(WindowPtr win)
+{
+    xmir_window *xmir_win = xmir_window_get(win);
+
+    return xmir_win->has_free_buffer;
+}
+
 _X_EXPORT RegionPtr
 xmir_window_get_dirty(WindowPtr win)
 {
     xmir_window *xmir_win = xmir_window_get(win);
+
+    if (xorg_list_is_empty(&xmir_win->link_damage))
+	    return (RegionPtr)&xmir_empty_region;
+
+    if (xmir_win->damaged) {
+	    RegionPtr damage = DamageRegion(xmir_win->damage);
+	    int i;
+
+	    for (i = 0; i < MIR_MAX_BUFFER_AGE; i++)
+		    RegionUnion(&xmir_win->past_damage[i],
+				&xmir_win->past_damage[i],
+				damage);
+
+	    DamageEmpty(xmir_win->damage);
+	    xmir_win->damaged = 0;
+    }
 
     return damage_region_for_current_buffer(xmir_win);
 }
@@ -160,12 +178,10 @@ static void
 damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 {
     xmir_window *xmir_win = ctx;
-    xmir_screen *xmir = xmir_screen_get(xmir_win->win->drawable.pScreen);
 
-    for (int i = 0; i < MIR_MAX_BUFFER_AGE; i++)
-        RegionUnion(&xmir_win->past_damage[i], &xmir_win->past_damage[i], region);
-
-    xorg_list_move(&xmir_win->link_damage, &xmir->damage_list);
+    xmir_win->damaged = 1;
+    xorg_list_move(&xmir_win->link_damage,
+		   &xmir_screen_get(damage->pScreen)->damage_list);
 }
 
 static void
@@ -182,15 +198,15 @@ xmir_window_enable_damage_tracking(WindowPtr win)
 
     xorg_list_init(&xmir_win->link_damage);
     xmir_win->damage = DamageCreate(damage_report, damage_destroy,
-                                    DamageReportRawRegion, TRUE,
+                                    DamageReportNonEmpty, TRUE,
                                     win->drawable.pScreen, xmir_win);
     DamageRegister(&win->drawable, xmir_win->damage);
-    DamageSetReportAfterOp(xmir_win->damage, TRUE);
 
     for (int i = 0; i < MIR_MAX_BUFFER_AGE; i++) {
         RegionNull(&xmir_win->past_damage[i]);
     }
     xmir_win->damage_index = 0;
+    xmir_win->damaged = 0;
 }
 /*
 static void

@@ -59,7 +59,8 @@ typedef struct {
     RegionRec           past_damage[MIR_MAX_BUFFER_AGE];
     int                 damage_index;
     struct xorg_list    link_damage;
-    Bool                has_free_buffer;
+    unsigned int        has_free_buffer:1;
+    unsigned int        damaged:1;
 } xmir_window;
 
 MirConnection *
