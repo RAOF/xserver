@@ -153,7 +153,7 @@ xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage
 {
     xmir_window *xmir_win, *tmp_win;
     xorg_list_for_each_entry_safe(xmir_win, tmp_win, &xmir->damage_list, link_damage) {
-        (*callback)(xmir_win->win, xmir_win->damage);
+        (*callback)(xmir_win->win);
         if(!xmir_window_is_dirty(xmir_win->win))
             xorg_list_del(&xmir_win->link_damage);
     }

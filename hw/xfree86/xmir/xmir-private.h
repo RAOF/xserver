@@ -38,6 +38,9 @@
 #include "xf86str.h"
 #include "list.h"
 #include "scrnintstr.h"
+#include "regionstr.h"
+
+#define MIR_MAX_BUFFER_AGE 3
 
 typedef struct xmir_marshall_handler xmir_marshall_handler;
 
@@ -53,6 +56,8 @@ typedef struct {
     WindowPtr           win;
     MirSurface         *surface;
     DamagePtr           damage;
+    RegionRec           past_damage[MIR_MAX_BUFFER_AGE];
+    int                 damage_index;
     struct xorg_list    link_damage;
     Bool                has_free_buffer;
 } xmir_window;

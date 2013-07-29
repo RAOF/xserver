@@ -35,6 +35,7 @@
 #endif
 #include <xorg-server.h>
 #include "windowstr.h"
+#include "regionstr.h"
 
 #include "xmir.h"
 #include "xmir-private.h"
@@ -73,6 +74,8 @@ xmir_handle_buffer_available(void *ctx)
     xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
     
     mir_win->has_free_buffer = TRUE;
+    mir_win->damage_index = (mir_win->damage_index + 1) % MIR_MAX_BUFFER_AGE;
+
     (*xmir->driver->BufferAvailableForWindow)(win);
 }
 
@@ -89,9 +92,6 @@ handle_buffer_received(MirSurface *surf, void *ctx)
  * @region is an (optional) damage region, to hint the compositor as to what
  * region has changed. It can be NULL to indicate the whole window should be
  * considered dirty.
- * Once there is a new buffer available for @window, @callback will be called
- * with @context.
- * The callback is run from the main X event loop.
  */
 _X_EXPORT int
 xmir_submit_rendering_for_window(WindowPtr win,
@@ -103,7 +103,11 @@ xmir_submit_rendering_for_window(WindowPtr win,
     mir_surface_swap_buffers(mir_win->surface, &handle_buffer_received, win);
 
     xorg_list_del(&mir_win->link_damage);
-    DamageEmpty(mir_win->damage);
+
+    if (region == NULL)
+        RegionEmpty(&mir_win->past_damage[mir_win->damage_index]);
+    else
+        RegionSubtract(&mir_win->past_damage[mir_win->damage_index], &mir_win->past_damage[mir_win->damage_index], region);
 
     return Success;
 }
@@ -116,12 +120,38 @@ xmir_window_has_free_buffer(WindowPtr win)
     return xmir_win->has_free_buffer;
 }
 
-_X_EXPORT Bool
-xmir_window_is_dirty(WindowPtr win)
+static inline int
+index_in_damage_buffer(int current_index, int age)
+{
+    int index = (current_index - age) % MIR_MAX_BUFFER_AGE;
+
+    return index < 0 ? MIR_MAX_BUFFER_AGE + index : index;
+}
+
+static RegionPtr
+damage_region_for_current_buffer(xmir_window *xmir_win)
+{
+    MirBufferPackage *package;
+    int age;
+
+    mir_surface_get_current_buffer(xmir_win->surface, &package);
+    age = package->age;
+
+    return &xmir_win->past_damage[index_in_damage_buffer(xmir_win->damage_index, age)];
+}
+
+_X_EXPORT RegionPtr
+xmir_window_get_dirty(WindowPtr win)
 {
     xmir_window *xmir_win = xmir_window_get(win);
 
-    return RegionNotEmpty(DamageRegion(xmir_win->damage));
+    return damage_region_for_current_buffer(xmir_win);
+}
+
+_X_EXPORT Bool
+xmir_window_is_dirty(WindowPtr win)
+{
+    return RegionNotEmpty(xmir_window_get_dirty(win));
 }
 
 static void
@@ -129,6 +159,9 @@ damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 {
     xmir_window *xmir_win = ctx;
     xmir_screen *xmir = xmir_screen_get(xmir_win->win->drawable.pScreen);
+
+    for (int i = 0; i < MIR_MAX_BUFFER_AGE; i++)
+        RegionUnion(&xmir_win->past_damage[i], &xmir_win->past_damage[i], region);
 
     /* TODO: Is there a better way to tell if this element is in a list? */
     if (xorg_list_is_empty(&xmir_win->link_damage)) {
@@ -150,10 +183,15 @@ xmir_window_enable_damage_tracking(WindowPtr win)
 
     xorg_list_init(&xmir_win->link_damage);
     xmir_win->damage = DamageCreate(damage_report, damage_destroy,
-                                    DamageReportNonEmpty, TRUE,
+                                    DamageReportRawRegion, TRUE,
                                     win->drawable.pScreen, xmir_win);
     DamageRegister(&win->drawable, xmir_win->damage);
     DamageSetReportAfterOp(xmir_win->damage, TRUE);
+
+    for (int i = 0; i < MIR_MAX_BUFFER_AGE; i++) {
+        RegionNull(&xmir_win->past_damage[i]);
+    }
+    xmir_win->damage_index = 0;
 }
 /*
 static void
