@@ -123,18 +123,14 @@ static void
 damageReportDamagePostRendering(DamagePtr pDamage, RegionPtr pOldDamage,
                                 RegionPtr pDamageRegion)
 {
-    BoxRec tmpBox;
-    RegionRec tmpRegion, newDamage;
-    Bool was_empty;
-
-    RegionUnion(&newDamage, pOldDamage, pDamageRegion);
-
     switch (pDamage->damageLevel) {
     case DamageReportRawRegion:
         (*pDamage->damageReportPostRendering) (pDamage, pDamageRegion,
                                                pDamage->closure);
         break;
     case DamageReportDeltaRegion:
+    {
+        RegionRec tmpRegion;
         RegionNull(&tmpRegion);
         RegionSubtract(&tmpRegion, pDamageRegion, pOldDamage);
         if (RegionNotEmpty(&tmpRegion)) {
@@ -143,25 +139,31 @@ damageReportDamagePostRendering(DamagePtr pDamage, RegionPtr pOldDamage,
         }
         RegionUninit(&tmpRegion);
         break;
+    }
     case DamageReportBoundingBox:
+    {
+        BoxRec tmpBox;
+        RegionRec newDamage;
         tmpBox = *RegionExtents(pOldDamage);
+        RegionUnion(&newDamage, pOldDamage, pDamageRegion);
         if (!BOX_SAME(&tmpBox, RegionExtents(&newDamage))) {
             (*pDamage->damageReportPostRendering) (pDamage, &newDamage,
                                                    pDamage->closure);
         }
         break;
+    }
     case DamageReportNonEmpty:
-        was_empty = !RegionNotEmpty(pOldDamage);
-        if (was_empty && RegionNotEmpty(&newDamage)) {
-            (*pDamage->damageReportPostRendering) (pDamage, &newDamage,
+        if (RegionNotEmpty(pOldDamage))
+            break;
+
+        if (RegionNotEmpty(pDamageRegion)) {
+            (*pDamage->damageReportPostRendering) (pDamage, pDamageRegion,
                                                    pDamage->closure);
         }
         break;
     case DamageReportNone:
         break;
     }
-
-    RegionUninit(&newDamage);
 }
 
 #if DAMAGE_DEBUG_ENABLE
