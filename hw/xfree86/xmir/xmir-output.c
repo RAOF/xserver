@@ -31,6 +31,7 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "xmir-private.h"
 #include "xf86Crtc.h"
@@ -42,9 +43,9 @@ crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
 
 static Bool
 crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
-		    Rotation rotation, int x, int y)  
+                    Rotation rotation, int x, int y)  
 {
-	return TRUE;
+    return TRUE;
 }
 
 static void
@@ -75,13 +76,13 @@ crtc_load_cursor_argb (xf86CrtcPtr crtc, CARD32 *image)
 static PixmapPtr
 crtc_shadow_create(xf86CrtcPtr crtc, void *data, int width, int height)
 {
-	return NULL;
+    return NULL;
 }
 
 static void *
 crtc_shadow_allocate(xf86CrtcPtr crtc, int width, int height)
 {
-	return NULL;
+    return NULL;
 }
 
 static void
@@ -104,80 +105,71 @@ static const xf86CrtcFuncsRec crtc_funcs = {
 };
 
 static void
-output_dpms(xf86OutputPtr output, int mode)
+xmir_output_dpms(xf86OutputPtr output, int mode)
 {
-	return;
+    return;
 }
 
 static xf86OutputStatus
-output_detect(xf86OutputPtr output)
+xmir_output_detect(xf86OutputPtr output)
 {
-	return XF86OutputStatusConnected;
+    MirDisplayOutput *mir_output = output->driver_private;
+    return mir_output->connected ? XF86OutputStatusConnected : XF86OutputStatusDisconnected;
 }
 
 static Bool
-output_mode_valid(xf86OutputPtr output, DisplayModePtr pModes)
+xmir_output_mode_valid(xf86OutputPtr output, DisplayModePtr pModes)
 {
-	return MODE_OK;
+    return MODE_OK;
 }
 
-struct mir_output {
-    int width;
-    int height;
-    xf86Monitor monitor;
-};
-
 static DisplayModePtr
-output_get_modes(xf86OutputPtr xf86output)
+xmir_output_get_modes(xf86OutputPtr xf86output)
 {
-    struct mir_output *output = xf86output->driver_private;
-    struct monitor_ranges *ranges;
-    DisplayModePtr modes;
+    MirDisplayOutput *mir_output = xf86output->driver_private;
+    DisplayModePtr modes = NULL, mode;
 
-    modes = xf86CVTMode(output->width, output->height, 60, TRUE, FALSE);
-    /* And now, because CVT the CVT standard doesn't support such common resolutions as 1366x768... */
-    /* TODO: We should really get Mir to just send us an EDID or at least enough info to generate one */
-    modes->VDisplay = output->height;
-    modes->HDisplay = output->width;
+    for (int i = 0; i < mir_output->num_modes; i++) {
+        char *mode_name = malloc(32);
+        mode = xf86CVTMode(mir_output->modes[i].horizontal_resolution,
+                           mir_output->modes[i].vertical_resolution,
+                           mir_output->modes[i].refresh_rate,
+                           FALSE, FALSE);
+        /* And now, because the CVT standard doesn't support such common resolutions as 1366x768... */
+        mode->VDisplay = mir_output->modes[i].vertical_resolution;
+        mode->HDisplay = mir_output->modes[i].horizontal_resolution;
 
-    output->monitor.det_mon[0].type = DS_RANGES;
-    ranges = &output->monitor.det_mon[0].section.ranges;
-    ranges->min_h = modes->HSync - 10;
-    ranges->max_h = modes->HSync + 10;
-    ranges->min_v = modes->VRefresh - 10;
-    ranges->max_v = modes->VRefresh + 10;
-    ranges->max_clock = modes->Clock + 100;
-    output->monitor.det_mon[1].type = DT;
-    output->monitor.det_mon[2].type = DT;
-    output->monitor.det_mon[3].type = DT;
-    output->monitor.no_sections = 0;
-    modes->type = M_T_PREFERRED | M_T_DRIVER;
+        mode->type = M_T_DRIVER;
+        /* TODO: Get preferred mode from Mir, or get a guarantee that the first mode is preferred */
+        if (i == 0)
+            mode->type |= M_T_PREFERRED;
 
-    modes->name = strdup("XMIR mode of death");
-
-    xf86output->MonInfo = &output->monitor;
+        snprintf(mode_name, 32, "%dx%d", mode->HDisplay, mode->VDisplay);
+        mode->name = mode_name;
+        modes = xf86ModesAdd(modes, mode);
+    }
+    /* TODO: Get Mir to send us the EDID blob and add that */
 
     return modes;
 }
 
 static void
-output_destroy(xf86OutputPtr xf86output)
+xmir_output_destroy(xf86OutputPtr xf86output)
 {
-    struct mir_output *output = xf86output->driver_private;
-    
-    free(output);
+    /* The MirDisplayOutput* in driver_private gets cleaned up by 
+       mir_display_config_destroy() */
 }
 
-static const xf86OutputFuncsRec output_funcs = {
-    .dpms	    = output_dpms,
-    .detect	    = output_detect,
-    .mode_valid	= output_mode_valid,
-    .get_modes	= output_get_modes,
-    .destroy	= output_destroy
+static const xf86OutputFuncsRec xmir_output_funcs = {
+    .dpms       = xmir_output_dpms,
+    .detect     = xmir_output_detect,
+    .mode_valid = xmir_output_mode_valid,
+    .get_modes  = xmir_output_get_modes,
+    .destroy    = xmir_output_destroy
 };
 
 static Bool
-resize(ScrnInfoPtr scrn, int width, int height)
+xmir_resize(ScrnInfoPtr scrn, int width, int height)
 {
     if (scrn->virtualX == width && scrn->virtualY == height)
         return TRUE;
@@ -186,38 +178,57 @@ resize(ScrnInfoPtr scrn, int width, int height)
 }
 
 static const xf86CrtcConfigFuncsRec config_funcs = {
-    resize
+    xmir_resize
 };
+
+static void
+xmir_output_init(ScrnInfoPtr scrn, MirDisplayOutput *output, int num)
+{
+    xf86OutputPtr xf86output;
+    char name[32];
+
+    snprintf(name, sizeof name, "XMIR-%d", num);
+
+    xf86output = xf86OutputCreate(scrn, &xmir_output_funcs, name);
+    xf86output->possible_crtcs = 0xffffffff;
+    xf86output->possible_clones = 0xffffffff;
+    xf86output->driver_private = output;
+
+    xf86output->interlaceAllowed = FALSE;
+    xf86output->doubleScanAllowed = FALSE;
+    xf86output->mm_width = output->physical_width_mm;
+    xf86output->mm_height = output->physical_height_mm;
+    /* TODO: Subpixel order from Mir */
+    xf86output->subpixel_order = SubPixelUnknown;
+}
 
 Bool
 xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
 {
-    MirDisplayInfo display_info;
-    xf86OutputPtr xf86output;
+    int i;
+    MirDisplayConfiguration *display_config;
     xf86CrtcPtr xf86crtc;
-    struct mir_output *output;
 
-    mir_connection_get_display_info(xmir_connection_get(), &display_info);
-    
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
 
-    /* We don't support resizing whatsoever */
+    /* What range of sizes can we actually support? */
     xf86CrtcSetSizeRange(scrn,
                          320, 320,
                          8192, 8192);
 
-    output = malloc(sizeof *output);
-    output->width = display_info.width;
-    output->height = display_info.height;
-    
-    xf86output = xf86OutputCreate(scrn, &output_funcs, "XMIR-1");
-    xf86output->possible_crtcs = 1;
-    xf86output->possible_clones = 1;
-    xf86output->driver_private = output;
 
-    xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
-    xf86crtc->driver_private = NULL;
+    display_config =
+        mir_connection_create_display_config(xmir_connection_get());
+
+    for (i = 0; i < display_config->num_displays; i++)
+        xmir_output_init(scrn, display_config->displays + i, i);
+
+    /* TODO: get the number of CRTCs from Mir */
+    for (i = 0; i < display_config->num_displays; i++) {
+        xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
+        xf86crtc->driver_private = NULL;
+    }
 
     xf86InitialConfiguration(scrn, TRUE);
   
