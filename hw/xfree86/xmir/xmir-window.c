@@ -150,19 +150,19 @@ xmir_window_get_dirty(WindowPtr win)
     xmir_window *xmir_win = xmir_window_get(win);
 
     if (xorg_list_is_empty(&xmir_win->link_damage))
-	    return (RegionPtr)&xmir_empty_region;
+        return (RegionPtr)&xmir_empty_region;
 
     if (xmir_win->damaged) {
-	    RegionPtr damage = DamageRegion(xmir_win->damage);
-	    int i;
+        RegionPtr damage = DamageRegion(xmir_win->damage);
+        int i;
 
-	    for (i = 0; i < MIR_MAX_BUFFER_AGE; i++)
-		    RegionUnion(&xmir_win->past_damage[i],
-				&xmir_win->past_damage[i],
-				damage);
+        for (i = 0; i < MIR_MAX_BUFFER_AGE; i++)
+            RegionUnion(&xmir_win->past_damage[i],
+                        &xmir_win->past_damage[i],
+                        damage);
 
-	    DamageEmpty(xmir_win->damage);
-	    xmir_win->damaged = 0;
+        DamageEmpty(xmir_win->damage);
+        xmir_win->damaged = 0;
     }
 
     return damage_region_for_current_buffer(xmir_win);
@@ -181,7 +181,7 @@ damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 
     xmir_win->damaged = 1;
     xorg_list_move(&xmir_win->link_damage,
-		   &xmir_screen_get(damage->pScreen)->damage_list);
+                   &xmir_screen_get(damage->pScreen)->damage_list);
 }
 
 static void
@@ -292,11 +292,11 @@ xmir_destroy_window(WindowPtr win)
     if (win->parent == NULL) {
         xmir_window *mir_win = xmir_window_get(win);
 
-	/* We cannot use xmir_window_disable_damage_tracking here because
-	 * the Damage extension will also clean it up on window destruction
-	 */
-	xorg_list_del(&mir_win->link_damage);
-	free(mir_win);
+    /* We cannot use xmir_window_disable_damage_tracking here because
+     * the Damage extension will also clean it up on window destruction
+     */
+    xorg_list_del(&mir_win->link_damage);
+    free(mir_win);
     }
 
     return ret;
