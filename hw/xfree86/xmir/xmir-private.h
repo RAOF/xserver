@@ -45,10 +45,12 @@
 typedef struct xmir_marshall_handler xmir_marshall_handler;
 
 struct xmir_screen {
+    ScrnInfoPtr            scrn;
     CreateWindowProcPtr    CreateWindow;
     DestroyWindowProcPtr   DestroyWindow;
     xmir_driver *          driver;
     xmir_marshall_handler *submit_rendering_handler;
+    xmir_marshall_handler *hotplug_event_handler;
     struct xorg_list       damage_list;
 };
 

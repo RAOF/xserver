@@ -108,6 +108,8 @@ xmir_screen_create(ScrnInfoPtr scrn)
     if (xmir == NULL)
         return NULL;
 
+    xmir->scrn = scrn;
+
     return xmir;
 }
 

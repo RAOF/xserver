@@ -182,16 +182,12 @@ static const xf86CrtcConfigFuncsRec config_funcs = {
 };
 
 static void
-xmir_output_init(ScrnInfoPtr scrn, MirDisplayOutput *output, int num)
+xmir_output_populate(xf86OutputPtr xf86output, MirDisplayOutput *output)
 {
-    xf86OutputPtr xf86output;
-    char name[32];
-
-    snprintf(name, sizeof name, "XMIR-%d", num);
-
-    xf86output = xf86OutputCreate(scrn, &xmir_output_funcs, name);
+    /* We can always arbitrarily clone and output */
     xf86output->possible_crtcs = 0xffffffff;
     xf86output->possible_clones = 0xffffffff;
+
     xf86output->driver_private = output;
 
     xf86output->interlaceAllowed = FALSE;
@@ -200,6 +196,42 @@ xmir_output_init(ScrnInfoPtr scrn, MirDisplayOutput *output, int num)
     xf86output->mm_height = output->physical_height_mm;
     /* TODO: Subpixel order from Mir */
     xf86output->subpixel_order = SubPixelUnknown;
+}
+
+static void
+xmir_handle_hotplug(void *ctx)
+{
+    ScrnInfoPtr scrn = ctx;
+    MirDisplayConfiguration *new_config;
+    xf86CrtcConfigPtr crtc_config = XF86_CRTC_CONFIG_PTR(scrn);
+
+    if (crtc_config->num_crtc == 0)
+        FatalError("[xmir] Received hotplug event, but have no CRTCs?\n");
+
+    mir_display_config_destroy((MirDisplayConfiguration *)crtc_config->crtc[0]->driver_private);
+
+    new_config = mir_connection_create_display_config(xmir_connection_get());
+    for (int i = 0; i < crtc_config->num_crtc; i++)
+        crtc_config->crtc[i]->driver_private = new_config;
+
+    if (crtc_config->num_output != new_config->num_displays)
+        FatalError("[xmir] New Mir config has different number of outputs?");
+
+    for (int i = 0; i < crtc_config->num_output ; i++) {
+        /* TODO: Ensure that the order actually matches up */
+        xmir_output_populate(crtc_config->output[i], new_config->displays + i);
+    }
+
+    /* Trigger RANDR refresh */
+    RRGetInfo(xf86ScrnToScreen(scrn), TRUE);   
+}
+
+static void
+xmir_display_config_callback(MirConnection *unused, void *ctx)
+{
+    xmir_screen *xmir = ctx;
+
+    xmir_post_to_eventloop(xmir->hotplug_event_handler, xmir->scrn);
 }
 
 Bool
@@ -218,16 +250,33 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
                          8192, 8192);
 
 
+    /* Hook up hotplug notification */
+    xmir->hotplug_event_handler =
+        xmir_register_handler(&xmir_handle_hotplug,
+                              sizeof (ScreenPtr));
+
+    mir_connection_set_display_config_change_callback(
+        xmir_connection_get(),
+        &xmir_display_config_callback, xmir);
+
     display_config =
         mir_connection_create_display_config(xmir_connection_get());
 
-    for (i = 0; i < display_config->num_displays; i++)
-        xmir_output_init(scrn, display_config->displays + i, i);
+    for (i = 0; i < display_config->num_displays; i++) {
+        xf86OutputPtr xf86output;
+        char name[32];
+
+        snprintf(name, sizeof name, "XMIR-%d", i);
+
+        xf86output = xf86OutputCreate(scrn, &xmir_output_funcs, name);
+
+        xmir_output_populate(xf86output, display_config->displays + i);
+    }
 
     /* TODO: get the number of CRTCs from Mir */
     for (i = 0; i < display_config->num_displays; i++) {
         xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
-        xf86crtc->driver_private = NULL;
+        xf86crtc->driver_private = display_config;
     }
 
     xf86InitialConfiguration(scrn, TRUE);
