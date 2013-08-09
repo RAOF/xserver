@@ -60,10 +60,12 @@ xmir_prime_fd_for_window(WindowPtr win)
     xmir_window *xmir_win = xmir_window_get(win);
     MirBufferPackage *package;
 
-    assert(mir_platform_type_gbm == mir_surface_get_platform_type(xmir_win->surface));
+    if (mir_platform_type_gbm != mir_surface_get_platform_type(xmir_win->surface))
+        FatalError("[xmir] Only supported on DRM Mir platform\n");
 
     mir_surface_get_current_buffer(xmir_win->surface, &package);
-    assert(package->fd_items == 1);
+    if (package->fd_items != 1)
+        FatalError("[xmir] Unexpected buffer contents from Mir; this is a programming error\n");
 
     return package->fd[0];
 }

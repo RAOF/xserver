@@ -200,9 +200,8 @@ xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
     if (!mir_connection_is_valid(conn)) {
         if (errmaj)
             *errmaj = LDR_MODSPECIFIC;
-        xf86Msg(X_ERROR,
-                "Failed to connect to Mir: %s\n",
-                mir_connection_get_error_message(conn));
+        FatalError("Failed to connect to Mir: %s\n",
+                   mir_connection_get_error_message(conn));
         return NULL;
     }
 
