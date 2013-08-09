@@ -40,14 +40,14 @@
 #include "scrnintstr.h"
 #include "window.h"
 
-typedef void (*xmir_buffer_available_proc)(WindowPtr win);
+typedef void (*xmir_window_proc)(WindowPtr win, RegionPtr damaged_region, int fd);
 
 typedef struct xmir_screen xmir_screen;
 
 #define XMIR_DRIVER_VERSION 1
 typedef struct {
     int version;
-    xmir_buffer_available_proc BufferAvailableForWindow;
+    xmir_window_proc BufferAvailableForWindow;
 } xmir_driver;
 
 _X_EXPORT int
@@ -87,9 +87,7 @@ xmir_window_get_dirty(WindowPtr win);
 _X_EXPORT Bool
 xmir_window_is_dirty(WindowPtr win);
 
-typedef void (*xmir_handle_window_damage_proc)(WindowPtr win);
-
 _X_EXPORT void
-xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage_proc callback);
+xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);
 
 #endif /* _XMIR_H */

@@ -151,14 +151,13 @@ xmir_screen_destroy(xmir_screen *xmir)
 }
 
 _X_EXPORT void
-xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage_proc callback)
+xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback)
 {
-    xmir_window *xmir_win, *tmp_win;
-    xorg_list_for_each_entry_safe(xmir_win, tmp_win, &xmir->damage_list, link_damage) {
-        (*callback)(xmir_win->win);
-        if(!xmir_window_is_dirty(xmir_win->win))
-            xorg_list_del(&xmir_win->link_damage);
-    }
+    xmir_window *xmir_win;
+    xorg_list_for_each_entry(xmir_win, &xmir->damage_list, link_damage)
+        (*callback)(xmir_win->win,
+                    xmir_window_get_dirty(xmir_win->win),
+                    xmir_prime_fd_for_window(xmir_win->win));
 }
 
 static MODULESETUPPROTO(xMirSetup);

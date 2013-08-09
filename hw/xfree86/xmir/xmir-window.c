@@ -80,7 +80,9 @@ xmir_handle_buffer_available(void *ctx)
     mir_win->has_free_buffer = TRUE;
     mir_win->damage_index = (mir_win->damage_index + 1) % MIR_MAX_BUFFER_AGE;
 
-    (*xmir->driver->BufferAvailableForWindow)(win);
+    (*xmir->driver->BufferAvailableForWindow)(win,
+                                              xmir_window_get_dirty(win),
+                                              xmir_prime_fd_for_window(win));
 }
 
 static void
@@ -127,13 +129,14 @@ xmir_submit_rendering_for_window(WindowPtr win,
     mir_win->has_free_buffer = FALSE;
     mir_surface_swap_buffers(mir_win->surface, &handle_buffer_received, win);
 
-    xorg_list_del(&mir_win->link_damage);
-
     tracking = damage_region_for_current_buffer(mir_win);
     if (region == NULL)
         RegionEmpty(tracking);
     else
         RegionSubtract(tracking, tracking, region);
+
+    if (RegionNil(tracking))
+        xorg_list_del(&mir_win->link_damage);
 
     return Success;
 }
