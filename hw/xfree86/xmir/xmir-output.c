@@ -32,9 +32,17 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
+#include "xmir.h"
 #include "xmir-private.h"
 #include "xf86Crtc.h"
+
+struct xmir_crtc {
+    xmir_screen             *xmir;
+    xmir_window             *root_fragment;
+    MirDisplayConfiguration *config;
+};
 
 static void
 crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
@@ -42,9 +50,119 @@ crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
 }
 
 static Bool
+xmir_mir_mode_matches(MirDisplayMode *mir_mode, DisplayModePtr X_mode)
+{
+    return (mir_mode->vertical_resolution == X_mode->VDisplay &&
+            mir_mode->horizontal_resolution == X_mode->HDisplay &&
+            fabs(mir_mode->refresh_rate - X_mode->VRefresh) < 0.01);
+}
+
+static Bool
+xmir_set_mode_for_output(MirDisplayOutput *output,
+                         DisplayModePtr mode)
+{
+    for (int i = 0; i < output->num_modes; i++) {
+        if (xmir_mir_mode_matches(&output->modes[i], mode)) {
+            output->current_mode = i;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static MirDisplayOutput *
+xmir_update_outputs_for_crtc(xf86CrtcPtr crtc, DisplayModePtr mode)
+{
+    xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(crtc->scrn);
+    MirDisplayOutput *representative = NULL;
+
+    for (int i = 0; i < crtc_cfg->num_output; i++) {
+        /* If this output should be driven by our "CRTC", set its mode */
+        if (crtc_cfg->output[i]->crtc == crtc) {
+            xmir_set_mode_for_output(crtc_cfg->output[i]->driver_private,
+                                     mode);
+        }
+        representative = crtc_cfg->output[i]->driver_private;
+    }
+    return representative;
+}
+
+static void
+xmir_disable_unused_outputs(xf86CrtcPtr crtc)
+{
+    xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(crtc->scrn);
+
+    for (int i = 0; i < crtc_cfg->num_output; i++)
+        /* If any outputs are no longer associated with a CRTC, disable them */
+        if (crtc_cfg->output[i]->crtc == NULL)
+            ((MirDisplayOutput*)crtc_cfg->output[i]->driver_private)->used = 0;
+}
+
+static Bool
 crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
                     Rotation rotation, int x, int y)  
 {
+    MirSurfaceParameters params = {
+        .name = "Xorg",
+        .width = mode->HDisplay,
+        .height = mode->VDisplay,
+        .pixel_format = mir_pixel_format_xrgb_8888,
+        .buffer_usage = mir_buffer_usage_hardware
+    };
+    BoxRec output_bounds = {
+        .x1 = x,
+        .y1 = y,
+        .x2 = x + mode->HDisplay,
+        .y2 = y + mode->VDisplay
+    };
+    struct xmir_crtc *xmir_crtc = crtc->driver_private;
+        MirDisplayOutput *output = NULL;
+    MirSurface *surface;
+    const char *error_msg;
+
+    if (mode->HDisplay == 0 || mode->VDisplay == 0)
+        return FALSE;    
+
+    output = xmir_update_outputs_for_crtc(crtc, mode);
+    xmir_disable_unused_outputs(crtc);
+
+    mir_wait_for(mir_connection_apply_display_config(xmir_connection_get(),
+                                                     xmir_crtc->config));
+    error_msg = mir_connection_get_error_message(xmir_connection_get());
+    if (*error_msg != '\0') {
+        xf86Msg(X_ERROR, "[xmir] Failed to set new display config: %s\n",
+                error_msg);
+        return FALSE;
+        /* TODO: Restore correct config cache */
+    }
+
+    if (xmir_crtc->root_fragment->surface != NULL)
+        mir_surface_release(xmir_crtc->root_fragment->surface, NULL, NULL);
+
+    if (output == NULL) {
+        xmir_crtc->root_fragment->surface = NULL;
+        return TRUE;
+    }
+
+    surface = mir_connection_create_surface_sync(xmir_connection_get(),
+                                                 &params);
+    if (!mir_surface_is_valid(surface)) {
+        xf86Msg(X_ERROR,
+                "[xmir] Failed to create surface for %dx%d mode: %s\n",
+                mode->HDisplay, mode->VDisplay,
+                mir_surface_get_error_message(surface));
+        return FALSE;
+    }
+    /* TODO: Associate surface with correct output */
+    xmir_crtc->root_fragment->surface = surface;
+
+    /* During X server init this will be NULL.
+       This is fixed up in xmir_window_create */
+    xmir_crtc->root_fragment->win = xf86ScrnToScreen(crtc->scrn)->root;
+
+    RegionInit(&xmir_crtc->root_fragment->region, &output_bounds, 0);
+    xmir_crtc->root_fragment->has_free_buffer = TRUE;
+
     return TRUE;
 }
 
@@ -90,6 +208,17 @@ crtc_shadow_destroy(xf86CrtcPtr crtc, PixmapPtr rotate_pixmap, void *data)
 {
 }
 
+static void
+xmir_crtc_destroy(xf86CrtcPtr crtc)
+{
+    struct xmir_crtc *xmir_crtc = crtc->driver_private;
+
+    if (xmir_crtc->root_fragment->surface != NULL)
+        mir_surface_release(xmir_crtc->root_fragment->surface, NULL, NULL);
+
+    free(xmir_crtc);
+}
+
 static const xf86CrtcFuncsRec crtc_funcs = {
     .dpms                = crtc_dpms,
     .set_mode_major      = crtc_set_mode_major,
@@ -101,7 +230,7 @@ static const xf86CrtcFuncsRec crtc_funcs = {
     .shadow_create       = crtc_shadow_create,
     .shadow_allocate     = crtc_shadow_allocate,
     .shadow_destroy      = crtc_shadow_destroy,
-    .destroy             = NULL, /* XXX */
+    .destroy             = xmir_crtc_destroy,
 };
 
 static void
@@ -244,10 +373,10 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
 
-    /* What range of sizes can we actually support? */
+    /* We don't scanout of a single surface, so we don't have a scanout limit */
     xf86CrtcSetSizeRange(scrn,
                          320, 320,
-                         8192, 8192);
+                         INT16_MAX, INT16_MAX);
 
 
     /* Hook up hotplug notification */
@@ -262,6 +391,13 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     display_config =
         mir_connection_create_display_config(xmir_connection_get());
 
+    xmir->root_window_fragments = malloc((display_config->num_displays + 1) *
+                                         sizeof(xmir_window *));
+    xmir->root_window_fragments[display_config->num_displays] = NULL;
+
+    if (xmir->root_window_fragments == NULL)
+        return FALSE;
+
     for (i = 0; i < display_config->num_displays; i++) {
         xf86OutputPtr xf86output;
         char name[32];
@@ -273,12 +409,28 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
         xmir_output_populate(xf86output, display_config->displays + i);
     }
 
-    /* TODO: get the number of CRTCs from Mir */
+    /* TODO: Get the number of CRTCs from Mir */
     for (i = 0; i < display_config->num_displays; i++) {
+        struct xmir_crtc *xmir_crtc = malloc(sizeof *xmir_crtc);
+        if (xmir_crtc == NULL)
+            return FALSE;
+
+        xmir_crtc->xmir = xmir;
+        xmir_crtc->root_fragment = calloc(1, sizeof *xmir_crtc->root_fragment);
+        xmir_crtc->config = display_config;
+
+        if (xmir_crtc->root_fragment == NULL)
+            return FALSE;
+
+        xmir->root_window_fragments[i] = xmir_crtc->root_fragment;
+
         xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
-        xf86crtc->driver_private = display_config;
+        xf86crtc->driver_private = xmir_crtc;
     }
 
+    xf86SetScrnInfoModes(scrn);
+
+    /* TODO: Use initial Mir state rather than setting up our own */
     xf86InitialConfiguration(scrn, TRUE);
   
     return TRUE;

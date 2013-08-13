@@ -40,9 +40,10 @@
 #include "scrnintstr.h"
 #include "window.h"
 
-typedef void (*xmir_window_proc)(WindowPtr win, RegionPtr damaged_region, int fd);
-
 typedef struct xmir_screen xmir_screen;
+typedef struct xmir_window xmir_window;
+
+typedef void (*xmir_window_proc)(xmir_window *xmir_win, RegionPtr damaged_region);
 
 #define XMIR_DRIVER_VERSION 1
 typedef struct {
@@ -67,25 +68,28 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir);
 
 _X_EXPORT void
 xmir_screen_close(ScreenPtr screen, xmir_screen *xmir);
-
+	
 _X_EXPORT void
 xmir_screen_destroy(xmir_screen *xmir);
 
-_X_EXPORT int
-xmir_prime_fd_for_window(WindowPtr win);
+_X_EXPORT WindowPtr
+xmir_window_to_windowptr(xmir_window *xmir_win);
 
 _X_EXPORT int
-xmir_submit_rendering_for_window(WindowPtr win,
+xmir_window_get_fd(xmir_window *xmir_win);
+
+_X_EXPORT int
+xmir_submit_rendering_for_window(xmir_window *xmir_win,
                                  RegionPtr region);
 
 _X_EXPORT Bool
-xmir_window_has_free_buffer(WindowPtr win);
+xmir_window_has_free_buffer(xmir_window *xmir_win);
 
 _X_EXPORT RegionPtr
-xmir_window_get_dirty(WindowPtr win);
+xmir_window_get_dirty(xmir_window *xmir_win);
 
 _X_EXPORT Bool
-xmir_window_is_dirty(WindowPtr win);
+xmir_window_is_dirty(xmir_window *xmir_win);
 
 _X_EXPORT void
 xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);

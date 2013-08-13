@@ -52,24 +52,29 @@ struct xmir_screen {
     xmir_marshall_handler *submit_rendering_handler;
     xmir_marshall_handler *hotplug_event_handler;
     struct xorg_list       damage_list;
+    struct xmir_window   **root_window_fragments; /* NULL terminated array of xmir_window * */
 };
 
-typedef struct {
+struct xmir_window {
     WindowPtr           win;
     MirSurface         *surface;
-    DamagePtr           damage;
+    RegionRec           region;
     RegionRec           past_damage[MIR_MAX_BUFFER_AGE];
+    DamagePtr           damage;
     int                 damage_index;
     struct xorg_list    link_damage;
     unsigned int        has_free_buffer:1;
     unsigned int        damaged:1;
-} xmir_window;
+};
 
 MirConnection *
 xmir_connection_get(void);
 
 xmir_screen *
 xmir_screen_get(ScreenPtr screen);
+
+xmir_window *
+xmir_window_get(WindowPtr win);
 
 Bool
 xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir);

@@ -63,7 +63,7 @@ xmir_connection_get(void)
 xmir_screen *
 xmir_screen_get(ScreenPtr screen)
 {
-    return dixLookupPrivate(&screen->devPrivates, &xmir_screen_private_key);
+    return dixGetPrivate(&screen->devPrivates, &xmir_screen_private_key);
 }
 
 _X_EXPORT int
@@ -153,11 +153,12 @@ xmir_screen_destroy(xmir_screen *xmir)
 _X_EXPORT void
 xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback)
 {
-    xmir_window *xmir_win;
-    xorg_list_for_each_entry(xmir_win, &xmir->damage_list, link_damage)
-        (*callback)(xmir_win->win,
-                    xmir_window_get_dirty(xmir_win->win),
-                    xmir_prime_fd_for_window(xmir_win->win));
+    xmir_window *xmir_win, *tmp_win;
+    xorg_list_for_each_entry_safe(xmir_win, tmp_win, &xmir->damage_list, link_damage) {
+        if (xmir_window_has_free_buffer(xmir_win) &&
+            xmir_window_is_dirty(xmir_win))
+            (*callback)(xmir_win, xmir_window_get_dirty(xmir_win));
+    }
 }
 
 static MODULESETUPPROTO(xMirSetup);

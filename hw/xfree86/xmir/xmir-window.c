@@ -44,20 +44,23 @@
 #include "xf86.h"
 
 #include <stdlib.h>
+#include <unistd.h>
 
 static DevPrivateKeyRec xmir_window_private_key;
 static const RegionRec xmir_empty_region = { {0, 0, 0, 0}, &RegionBrokenData };
 
-static xmir_window *
+xmir_window *
 xmir_window_get(WindowPtr win)
 {
+    /* The root window is handled specially */
+    assert(win->parent != NULL);
+
     return dixGetPrivate(&win->devPrivates, &xmir_window_private_key);
 }
 
 _X_EXPORT int
-xmir_prime_fd_for_window(WindowPtr win)
+xmir_window_get_fd(xmir_window *xmir_win)
 {
-    xmir_window *xmir_win = xmir_window_get(win);
     MirBufferPackage *package;
 
     if (mir_platform_type_gbm != mir_surface_get_platform_type(xmir_win->surface))
@@ -73,25 +76,20 @@ xmir_prime_fd_for_window(WindowPtr win)
 static void
 xmir_handle_buffer_available(void *ctx)
 {
-    WindowPtr win = *(WindowPtr *)ctx;
-    xmir_window *mir_win = xmir_window_get(win);
-    xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
+    xmir_window *mir_win = *(xmir_window **)ctx;
+
+    if (mir_win->surface == NULL)
+        return;
+
+    xmir_screen *xmir =
+        xmir_screen_get(xmir_window_to_windowptr(mir_win)->drawable.pScreen);
 
     mir_win->has_free_buffer = TRUE;
     mir_win->damage_index = (mir_win->damage_index + 1) % MIR_MAX_BUFFER_AGE;
 
-    (*xmir->driver->BufferAvailableForWindow)(win,
-                                              xmir_window_get_dirty(win),
-                                              xmir_prime_fd_for_window(win));
-}
-
-static void
-handle_buffer_received(MirSurface *surf, void *ctx)
-{
-    WindowPtr win = ctx;
-    xmir_screen *xmir = xmir_screen_get(win->drawable.pScreen);
-
-    xmir_post_to_eventloop(xmir->submit_rendering_handler, &win);
+    if (xmir_window_is_dirty(mir_win))
+        (*xmir->driver->BufferAvailableForWindow)(mir_win,
+                                                  xmir_window_get_dirty(mir_win));
 }
 
 static inline int
@@ -102,16 +100,34 @@ index_in_damage_buffer(int current_index, int age)
     return index < 0 ? MIR_MAX_BUFFER_AGE + index : index;
 }
 
+static void
+handle_buffer_received(MirSurface *surf, void *ctx)
+{
+    xmir_window *xmir_win = ctx;
+
+    xmir_screen *xmir =
+        xmir_screen_get(xmir_window_to_windowptr(xmir_win)->drawable.pScreen);
+
+    xmir_post_to_eventloop(xmir->submit_rendering_handler, &xmir_win);
+}
+
 static RegionPtr
 damage_region_for_current_buffer(xmir_window *xmir_win)
 {
     MirBufferPackage *package;
+    RegionPtr region;
     int age;
 
     mir_surface_get_current_buffer(xmir_win->surface, &package);
     age = package->age;
 
-    return &xmir_win->past_damage[index_in_damage_buffer(xmir_win->damage_index, age)];
+    region = &xmir_win->past_damage[index_in_damage_buffer(xmir_win->damage_index, age)];
+
+    /* As per EGL_EXT_buffer_age, contents are undefined for age == 0 */
+    if (age == 0)
+        RegionCopy(region, &xmir_win->region);
+
+    return region;
 }
 
 /* Submit rendering for @window to Mir
@@ -120,51 +136,48 @@ damage_region_for_current_buffer(xmir_window *xmir_win)
  * considered dirty.
  */
 _X_EXPORT int
-xmir_submit_rendering_for_window(WindowPtr win,
+xmir_submit_rendering_for_window(xmir_window *xmir_win,
                                  RegionPtr region)
 {
-    xmir_window *mir_win = xmir_window_get(win);
     RegionPtr tracking;
 
-    mir_win->has_free_buffer = FALSE;
-    mir_surface_swap_buffers(mir_win->surface, &handle_buffer_received, win);
+    xmir_win->has_free_buffer = FALSE;
+    mir_surface_swap_buffers(xmir_win->surface, &handle_buffer_received, xmir_win);
+    tracking = damage_region_for_current_buffer(xmir_win);
 
-    tracking = damage_region_for_current_buffer(mir_win);
     if (region == NULL)
         RegionEmpty(tracking);
     else
         RegionSubtract(tracking, tracking, region);
 
     if (RegionNil(tracking))
-        xorg_list_del(&mir_win->link_damage);
+        xorg_list_del(&xmir_win->link_damage);
 
     return Success;
 }
 
 _X_EXPORT Bool
-xmir_window_has_free_buffer(WindowPtr win)
+xmir_window_has_free_buffer(xmir_window *xmir_win)
 {
-    xmir_window *xmir_win = xmir_window_get(win);
-
     return xmir_win->has_free_buffer;
 }
 
 _X_EXPORT RegionPtr
-xmir_window_get_dirty(WindowPtr win)
+xmir_window_get_dirty(xmir_window *xmir_win)
 {
-    xmir_window *xmir_win = xmir_window_get(win);
-
     if (xorg_list_is_empty(&xmir_win->link_damage))
         return (RegionPtr)&xmir_empty_region;
 
     if (xmir_win->damaged) {
         RegionPtr damage = DamageRegion(xmir_win->damage);
+        RegionIntersect(damage, damage, &xmir_win->region);
         int i;
 
-        for (i = 0; i < MIR_MAX_BUFFER_AGE; i++)
+        for (i = 0; i < MIR_MAX_BUFFER_AGE; i++) {
             RegionUnion(&xmir_win->past_damage[i],
                         &xmir_win->past_damage[i],
                         damage);
+        }
 
         DamageEmpty(xmir_win->damage);
         xmir_win->damaged = 0;
@@ -174,9 +187,15 @@ xmir_window_get_dirty(WindowPtr win)
 }
 
 _X_EXPORT Bool
-xmir_window_is_dirty(WindowPtr win)
+xmir_window_is_dirty(xmir_window *xmir_win)
 {
-    return RegionNotEmpty(xmir_window_get_dirty(win));
+    return RegionNotEmpty(xmir_window_get_dirty(xmir_win));
+}
+
+_X_EXPORT WindowPtr
+xmir_window_to_windowptr(xmir_window *xmir_win)
+{
+    return xmir_win->win;
 }
 
 static void
@@ -197,9 +216,9 @@ damage_destroy(DamagePtr damage, void *ctx)
 }
 
 static void
-xmir_window_enable_damage_tracking(WindowPtr win)
+xmir_window_enable_damage_tracking(xmir_window *xmir_win)
 {
-    xmir_window *xmir_win = xmir_window_get(win);
+    WindowPtr win = xmir_win->win;
 
     xorg_list_init(&xmir_win->link_damage);
     xmir_win->damage = DamageCreate(damage_report, damage_destroy,
@@ -224,12 +243,6 @@ xmir_window_disable_damage_tracking(WindowPtr win)
     DamageDestroy(xmir_win->damage);
 }
 */
-static void
-handle_surface_create(MirSurface *surface, void *ctx)
-{
-    xmir_window *mir_win = ctx;
-    mir_win->surface = surface;
-}
 
 static Bool
 xmir_create_window(WindowPtr win)
@@ -246,36 +259,15 @@ xmir_create_window(WindowPtr win)
      * window, which has no parent.
      */
     if (win->parent == NULL) {
-        MirSurfaceParameters params;
-        xmir_window *mir_win = calloc(1, sizeof *mir_win);
+        /* The CRTC setup has already created the root_window_fragments
+           array. We need to hook the root window into it */
+        for (int i = 0; xmir->root_window_fragments[i] != NULL; i++) {
+            xmir->root_window_fragments[i]->win = win;
 
-        if (mir_win == NULL)
-            return FALSE;
-
-        mir_win->win = win;
-
-        params.name = "Xorg";
-        params.width = win->drawable.width;
-        params.height = win->drawable.height;
-        /* 
-         * We'll need to do something smarter here when we're rootless -
-         * we'll need to distinguish between ARGB and RGB Visuals.
-         */
-        params.pixel_format = mir_pixel_format_xrgb_8888;
-        params.buffer_usage = mir_buffer_usage_hardware;
-
-        mir_wait_for(mir_connection_create_surface(xmir_connection_get(),
-                                                   &params,
-                                                   &handle_surface_create,
-                                                   mir_win));
-        if (mir_win->surface == NULL) {
-            free (mir_win);
-            return FALSE;
+            /* TODO: This creates one Damage tracker per fragment; we only
+               really need one, though */
+            xmir_window_enable_damage_tracking(xmir->root_window_fragments[i]);
         }
-        dixSetPrivate(&win->devPrivates, &xmir_window_private_key, mir_win);
-        /* This window now has a buffer available */
-        xmir_post_to_eventloop(xmir->submit_rendering_handler, &win);
-        xmir_window_enable_damage_tracking(win);
     }
     return ret;
 }
@@ -295,13 +287,15 @@ xmir_destroy_window(WindowPtr win)
      * window, which has no parent.
      */
     if (win->parent == NULL) {
-        xmir_window *mir_win = xmir_window_get(win);
+        /* Break the link with the root_window_fragments */
+        for (int i = 0; xmir->root_window_fragments[i] != NULL; i++) {
+            xmir->root_window_fragments[i]->win = NULL;
 
-    /* We cannot use xmir_window_disable_damage_tracking here because
-     * the Damage extension will also clean it up on window destruction
-     */
-    xorg_list_del(&mir_win->link_damage);
-    free(mir_win);
+            /* We cannot use xmir_window_disable_damage_tracking here because
+             * the Damage extension will also clean it up on window destruction
+            */
+            xorg_list_del(&xmir->root_window_fragments[i]->link_damage);
+        }
     }
 
     return ret;
@@ -320,8 +314,7 @@ xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir)
 
     xmir->submit_rendering_handler = 
         xmir_register_handler(&xmir_handle_buffer_available,
-                              sizeof (WindowPtr));
-
+                              sizeof (xmir_window *));
     if (xmir->submit_rendering_handler == NULL)
         return FALSE;
 
