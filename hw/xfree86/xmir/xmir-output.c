@@ -98,6 +98,11 @@ xmir_disable_unused_outputs(xf86CrtcPtr crtc)
             ((MirDisplayOutput*)crtc_cfg->output[i]->driver_private)->used = 0;
 }
 
+static void
+xmir_stupid_callback(MirSurface *surf, void *ctx)
+{
+}
+
 static Bool
 crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
                     Rotation rotation, int x, int y)  
@@ -137,7 +142,7 @@ crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
     }
 
     if (xmir_crtc->root_fragment->surface != NULL)
-        mir_surface_release(xmir_crtc->root_fragment->surface, NULL, NULL);
+        mir_surface_release(xmir_crtc->root_fragment->surface, xmir_stupid_callback, NULL);
 
     if (output == NULL) {
         xmir_crtc->root_fragment->surface = NULL;
