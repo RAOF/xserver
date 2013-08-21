@@ -104,7 +104,7 @@ xmir_stupid_callback(MirSurface *surf, void *ctx)
 }
 
 static Bool
-crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
+xmir_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
                     Rotation rotation, int x, int y)  
 {
     MirSurfaceParameters params = {
@@ -226,7 +226,7 @@ xmir_crtc_destroy(xf86CrtcPtr crtc)
 
 static const xf86CrtcFuncsRec crtc_funcs = {
     .dpms                = crtc_dpms,
-    .set_mode_major      = crtc_set_mode_major,
+    .set_mode_major      = xmir_crtc_set_mode_major,
     .set_cursor_colors   = crtc_set_cursor_colors,
     .set_cursor_position = crtc_set_cursor_position,
     .show_cursor         = crtc_show_cursor,
@@ -305,10 +305,26 @@ static const xf86OutputFuncsRec xmir_output_funcs = {
 static Bool
 xmir_resize(ScrnInfoPtr scrn, int width, int height)
 {
+    xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(scrn);
+
     if (scrn->virtualX == width && scrn->virtualY == height)
         return TRUE;
-    /* We don't handle resize at all, we must match the compositor size */
-    return FALSE;
+
+    scrn->virtualX = width;
+    scrn->virtualY = height;
+    scrn->displayWidth = width;
+
+    for (int i = 0; i < crtc_cfg->num_crtc; i++) {
+        xf86CrtcPtr crtc = crtc_cfg->crtc[i];
+
+        if (!crtc->enabled)
+            continue;
+
+        xmir_crtc_set_mode_major(crtc, &crtc->mode,
+                                 crtc->rotation, crtc->x, crtc->y);
+    }
+
+    return TRUE;
 }
 
 static const xf86CrtcConfigFuncsRec config_funcs = {
