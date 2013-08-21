@@ -641,7 +641,9 @@ InitOutput(ScreenInfo * pScreenInfo, int argc, char **argv)
 
         /* Remove (unload) drivers that are not required */
         for (i = 0; i < xf86NumDrivers; )
-            if (xf86DriverList[i] && xf86DriverList[i]->refCount <= 0)
+            if (xf86DriverList[i] &&
+		!xf86DriverHasEntities(xf86DriverList[i]) &&
+		xf86DriverList[i]->refCount <= 0)
                 xf86DeleteDriver(i);
             else
                 i++;
