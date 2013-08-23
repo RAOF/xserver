@@ -1,3 +1,27 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM4) saucy; urgency=low
+
+  * xmir.patch: Add yet more debug output; fix modesetting
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 23 Aug 2013 10:46:07 +1000
+
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM3) saucy; urgency=low
+
+  * xmir.patch: Add some debug output
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Thu, 22 Aug 2013 21:10:35 +1000
+
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM2) saucy; urgency=low
+
+  * xmir.patch: Fix the build. BUILD!
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Thu, 22 Aug 2013 16:04:07 +1000
+
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM1) saucy; urgency=low
+
+  * xmir.patch: First cut of XRandR support
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Thu, 22 Aug 2013 15:47:20 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3) saucy; urgency=low
 
   * xmir.patch: Use the API we have, not the API we've documented
