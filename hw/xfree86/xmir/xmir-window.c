@@ -198,12 +198,10 @@ xmir_window_to_windowptr(xmir_window *xmir_win)
     return xmir_win->win;
 }
 
-_X_EXPORT void
-xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy)
+_X_EXPORT BoxPtr
+xmir_window_get_drawable_region(xmir_window *xmir_win)
 {
-    BoxPtr box = RegionExtents(&xmir_win->region);
-    *dx = -box->x1;
-    *dy = -box->y1;
+    return RegionExtents(&xmir_win->region);
 }
 
 static void
@@ -223,10 +221,13 @@ damage_destroy(DamagePtr damage, void *ctx)
     xorg_list_del(&xmir_win->link_damage);
 }
 
-static void
+void
 xmir_window_enable_damage_tracking(xmir_window *xmir_win)
 {
     WindowPtr win = xmir_win->win;
+
+    if (xmir_win->damage != NULL)
+        return;
 
     xorg_list_init(&xmir_win->link_damage);
     xmir_win->damage = DamageCreate(damage_report, damage_destroy,
@@ -240,17 +241,16 @@ xmir_window_enable_damage_tracking(xmir_window *xmir_win)
     xmir_win->damage_index = 0;
     xmir_win->damaged = 0;
 }
-/*
-static void
-xmir_window_disable_damage_tracking(WindowPtr win)
-{
-    xmir_window *xmir_win = xmir_window_get(win);
 
-    xorg_list_del(&xmir_win->link_damage);
-    DamageUnregister(&win->drawable, xmir_win->damage);
-    DamageDestroy(xmir_win->damage);
+void
+xmir_window_disable_damage_tracking(xmir_window *xmir_win)
+{
+    if (xmir_win->damage != NULL) {
+        DamageUnregister(&xmir_win->win->drawable, xmir_win->damage);
+        DamageDestroy(xmir_win->damage);
+        xmir_win->damage = NULL;
+    }
 }
-*/
 
 static Bool
 xmir_create_window(WindowPtr win)

@@ -76,6 +76,13 @@ xmir_screen_get(ScreenPtr screen);
 xmir_window *
 xmir_window_get(WindowPtr win);
 
+void
+xmir_window_enable_damage_tracking(xmir_window *xmir_win);
+
+void
+xmir_window_disable_damage_tracking(xmir_window *xmir_win);
+
+
 Bool
 xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir);
 

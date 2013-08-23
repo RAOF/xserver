@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <xorg-config.h>
 #include "xmir.h"
 #include "xmir-private.h"
 #include "xf86Crtc.h"
@@ -79,8 +80,13 @@ xmir_set_mode_for_output(MirDisplayOutput *output,
                          DisplayModePtr mode)
 {
     for (int i = 0; i < output->num_modes; i++) {
+        xf86Msg(X_INFO, "Checking against mode (%dx%d)\n",
+                output->modes[i].horizontal_resolution,
+                output->modes[i].vertical_resolution);
         if (xmir_mir_mode_matches(&output->modes[i], mode)) {
             output->current_mode = i;
+            output->used = 1;
+            xf86Msg(X_INFO, "Matched mode %d\n", i);
             return TRUE;
         }
     }
@@ -233,7 +239,6 @@ xmir_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
                 mir_surface_get_error_message(surface));
         return FALSE;
     }
-    /* TODO: Associate surface with correct output */
     xmir_crtc->root_fragment->surface = surface;
 
     /* During X server init this will be NULL.
@@ -339,10 +344,16 @@ xmir_output_get_modes(xf86OutputPtr xf86output)
     DisplayModePtr modes = NULL, mode;
 
     for (int i = 0; i < mir_output->num_modes; i++) {
+        /* Check if mode differs only by refresh rate from previous mode and reject */
+        /* TODO: Remove this check and instead handle refresh rate correctly */
+        if (mode != NULL)
+            if (xmir_mir_mode_matches((mir_output->modes + i), mode))
+                continue;
+
         char *mode_name = malloc(32);
         mode = xf86CVTMode(mir_output->modes[i].horizontal_resolution,
                            mir_output->modes[i].vertical_resolution,
-                           mir_output->modes[i].refresh_rate,
+                           60.0f,
                            FALSE, FALSE);
         /* And now, because the CVT standard doesn't support such common resolutions as 1366x768... */
         mode->VDisplay = mir_output->modes[i].vertical_resolution;
@@ -381,9 +392,18 @@ static Bool
 xmir_resize(ScrnInfoPtr scrn, int width, int height)
 {
     xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(scrn);
+    ScreenPtr screen = xf86ScrnToScreen(scrn);
+    PixmapPtr old_screen_pixmap, new_screen_pixmap;
 
     if (scrn->virtualX == width && scrn->virtualY == height)
         return TRUE;
+
+    old_screen_pixmap = screen->GetScreenPixmap(screen);
+    new_screen_pixmap = screen->CreatePixmap(screen, width, height, scrn->depth,
+                                             CREATE_PIXMAP_USAGE_BACKING_PIXMAP);
+
+    if (!new_screen_pixmap)
+        return FALSE;
 
     scrn->virtualX = width;
     scrn->virtualY = height;
@@ -399,6 +419,9 @@ xmir_resize(ScrnInfoPtr scrn, int width, int height)
                                  crtc->rotation, crtc->x, crtc->y);
     }
 
+    screen->SetScreenPixmap(new_screen_pixmap);
+    screen->DestroyPixmap(old_screen_pixmap);
+
     return TRUE;
 }
 
@@ -409,7 +432,7 @@ static const xf86CrtcConfigFuncsRec config_funcs = {
 static void
 xmir_handle_hotplug(void *ctx)
 {
-    ScrnInfoPtr scrn = ctx;
+    ScrnInfoPtr scrn = *(ScrnInfoPtr *)ctx;
     xf86CrtcConfigPtr crtc_config = XF86_CRTC_CONFIG_PTR(scrn);
 
     if (crtc_config->num_crtc == 0)
@@ -426,7 +449,7 @@ xmir_display_config_callback(MirConnection *unused, void *ctx)
 {
     xmir_screen *xmir = ctx;
 
-    xmir_post_to_eventloop(xmir->hotplug_event_handler, xmir->scrn);
+    xmir_post_to_eventloop(xmir->hotplug_event_handler, &xmir->scrn);
 }
 
 Bool
@@ -489,6 +512,7 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
             return FALSE;
 
         xmir->root_window_fragments[i] = xmir_crtc->root_fragment;
+        RegionNull(&xmir_crtc->root_fragment->region);
 
         xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
         xf86crtc->driver_private = xmir_crtc;
