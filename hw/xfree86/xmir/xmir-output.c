@@ -215,7 +215,7 @@ xmir_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
     xmir_dump_config(xmir_crtc->config);
 
     if (xmir_crtc->root_fragment->surface != NULL)
-        mir_surface_release(xmir_crtc->root_fragment->surface, xmir_stupid_callback, NULL);
+        mir_wait_for(mir_surface_release(xmir_crtc->root_fragment->surface, xmir_stupid_callback, NULL));
 
     if (output_id == mir_display_output_id_invalid) {
         xmir_crtc->root_fragment->surface = NULL;
