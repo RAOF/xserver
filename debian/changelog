@@ -1,3 +1,9 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM8) saucy; urgency=low
+
+  * Resize screen pixmap on screen resize
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 23 Aug 2013 16:54:37 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM7) saucy; urgency=low
 
   * Where did that missing ) go?

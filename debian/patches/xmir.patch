@@ -247,10 +247,10 @@ index 0000000..80715f8
 +sdk_HEADERS = xmir.h
 diff --git a/hw/xfree86/xmir/xmir-output.c b/hw/xfree86/xmir/xmir-output.c
 new file mode 100644
-index 0000000..2c3a3ac
+index 0000000..d50b8b2
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-output.c
-@@ -0,0 +1,503 @@
+@@ -0,0 +1,523 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -287,6 +287,7 @@ index 0000000..2c3a3ac
 +#include <stdio.h>
 +#include <math.h>
 +
++#include <xorg-config.h>
 +#include "xmir.h"
 +#include "xmir-private.h"
 +#include "xf86Crtc.h"
@@ -486,12 +487,14 @@ index 0000000..2c3a3ac
 +                mir_surface_get_error_message(surface));
 +        return FALSE;
 +    }
-+    /* TODO: Associate surface with correct output */
 +    xmir_crtc->root_fragment->surface = surface;
 +
 +    /* During X server init this will be NULL.
 +       This is fixed up in xmir_window_create */
 +    xmir_crtc->root_fragment->win = xf86ScrnToScreen(crtc->scrn)->root;
++
++    if (xmir_crtc->root_fragment->win != NULL)
++        xmir_window_enable_damage_tracking(xmir_crtc->root_fragment);
 +
 +    RegionInit(&xmir_crtc->root_fragment->region, &output_bounds, 0);
 +    xmir_crtc->root_fragment->has_free_buffer = TRUE;
@@ -634,6 +637,9 @@ index 0000000..2c3a3ac
 +xmir_resize(ScrnInfoPtr scrn, int width, int height)
 +{
 +    xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(scrn);
++    ScreenPtr screen = xf86ScrnToScreen(scrn);
++    xmir_screen *xmir = xmir_screen_get(screen);
++    PixmapPtr old_screen_pixmap, new_screen_pixmap;
 +
 +    if (scrn->virtualX == width && scrn->virtualY == height)
 +        return TRUE;
@@ -641,6 +647,20 @@ index 0000000..2c3a3ac
 +    scrn->virtualX = width;
 +    scrn->virtualY = height;
 +    scrn->displayWidth = width;
++
++    old_screen_pixmap = screen->GetScreenPixmap(screen);
++    new_screen_pixmap = screen->CreatePixmap(screen, width, height, scrn->depth,
++                                             0);
++
++    if (!new_screen_pixmap)
++        return FALSE;
++
++    for (int i = 0; xmir->root_window_fragments[i]; i++) {
++        xmir_window_disable_damage_tracking(xmir->root_window_fragments[i]);
++    }
++
++    screen->SetScreenPixmap(new_screen_pixmap);
++    screen->DestroyPixmap(old_screen_pixmap);
 +
 +    for (int i = 0; i < crtc_cfg->num_crtc; i++) {
 +        xf86CrtcPtr crtc = crtc_cfg->crtc[i];
@@ -662,7 +682,7 @@ index 0000000..2c3a3ac
 +static void
 +xmir_handle_hotplug(void *ctx)
 +{
-+    ScrnInfoPtr scrn = ctx;
++    ScrnInfoPtr scrn = *(ScrnInfoPtr *)ctx;
 +    xf86CrtcConfigPtr crtc_config = XF86_CRTC_CONFIG_PTR(scrn);
 +
 +    if (crtc_config->num_crtc == 0)
@@ -679,7 +699,7 @@ index 0000000..2c3a3ac
 +{
 +    xmir_screen *xmir = ctx;
 +
-+    xmir_post_to_eventloop(xmir->hotplug_event_handler, xmir->scrn);
++    xmir_post_to_eventloop(xmir->hotplug_event_handler, &xmir->scrn);
 +}
 +
 +Bool
@@ -756,10 +776,10 @@ index 0000000..2c3a3ac
 +}
 diff --git a/hw/xfree86/xmir/xmir-private.h b/hw/xfree86/xmir/xmir-private.h
 new file mode 100644
-index 0000000..f62302f
+index 0000000..a24afbf
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-private.h
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,104 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -837,6 +857,13 @@ index 0000000..f62302f
 +
 +xmir_window *
 +xmir_window_get(WindowPtr win);
++
++void
++xmir_window_enable_damage_tracking(xmir_window *xmir_win);
++
++void
++xmir_window_disable_damage_tracking(xmir_window *xmir_win);
++
 +
 +Bool
 +xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir);
@@ -982,10 +1009,10 @@ index 0000000..7464644
 +
 diff --git a/hw/xfree86/xmir/xmir-window.c b/hw/xfree86/xmir/xmir-window.c
 new file mode 100644
-index 0000000..4061f7e
+index 0000000..3a4f4c4
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-window.c
-@@ -0,0 +1,330 @@
+@@ -0,0 +1,332 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -1211,10 +1238,13 @@ index 0000000..4061f7e
 +    xorg_list_del(&xmir_win->link_damage);
 +}
 +
-+static void
++void
 +xmir_window_enable_damage_tracking(xmir_window *xmir_win)
 +{
 +    WindowPtr win = xmir_win->win;
++
++    if (xmir_win->damage != NULL)
++        return;
 +
 +    xorg_list_init(&xmir_win->link_damage);
 +    xmir_win->damage = DamageCreate(damage_report, damage_destroy,
@@ -1228,17 +1258,16 @@ index 0000000..4061f7e
 +    xmir_win->damage_index = 0;
 +    xmir_win->damaged = 0;
 +}
-+/*
-+static void
-+xmir_window_disable_damage_tracking(WindowPtr win)
-+{
-+    xmir_window *xmir_win = xmir_window_get(win);
 +
-+    xorg_list_del(&xmir_win->link_damage);
-+    DamageUnregister(&win->drawable, xmir_win->damage);
-+    DamageDestroy(xmir_win->damage);
++void
++xmir_window_disable_damage_tracking(xmir_window *xmir_win)
++{
++    if (xmir_win->damage != NULL) {
++        DamageUnregister(&xmir_win->win->drawable, xmir_win->damage);
++        DamageDestroy(xmir_win->damage);
++        xmir_win->damage = NULL;
++    }
 +}
-+*/
 +
 +static Bool
 +xmir_create_window(WindowPtr win)
