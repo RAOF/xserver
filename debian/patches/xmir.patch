@@ -982,7 +982,7 @@ index 0000000..7464644
 +
 diff --git a/hw/xfree86/xmir/xmir-window.c b/hw/xfree86/xmir/xmir-window.c
 new file mode 100644
-index 0000000..6060cc7
+index 0000000..9f66255
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-window.c
 @@ -0,0 +1,330 @@
@@ -1181,7 +1181,7 @@ index 0000000..6060cc7
 +}
 +
 +_X_EXPORT WindowPtr
-+xmir_window_to_windowptr(xmir_window *xmir_win)
++xmir_window_to_windowptr(xmir_window *xmir_win
 +{
 +    return xmir_win->win;
 +}
@@ -1189,9 +1189,9 @@ index 0000000..6060cc7
 +_X_EXPORT void
 +xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy)
 +{
-+    BoxPtr box = RegionExtents(xmir_win->region);
-+    *dx = -box.x1;
-+    *dy = -box.y1;
++    BoxPtr box = RegionExtents(&xmir_win->region);
++    *dx = -box->x1;
++    *dy = -box->y1;
 +}
 +
 +static void
