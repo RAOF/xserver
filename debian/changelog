@@ -1,3 +1,9 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM7) saucy; urgency=low
+
+  * Where did that missing ) go?
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 23 Aug 2013 15:08:07 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM6) saucy; urgency=low
 
   * Fix the build

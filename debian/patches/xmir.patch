@@ -982,7 +982,7 @@ index 0000000..7464644
 +
 diff --git a/hw/xfree86/xmir/xmir-window.c b/hw/xfree86/xmir/xmir-window.c
 new file mode 100644
-index 0000000..9f66255
+index 0000000..4061f7e
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-window.c
 @@ -0,0 +1,330 @@
@@ -1181,7 +1181,7 @@ index 0000000..9f66255
 +}
 +
 +_X_EXPORT WindowPtr
-+xmir_window_to_windowptr(xmir_window *xmir_win
++xmir_window_to_windowptr(xmir_window *xmir_win)
 +{
 +    return xmir_win->win;
 +}
