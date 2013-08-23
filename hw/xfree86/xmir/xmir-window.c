@@ -198,6 +198,14 @@ xmir_window_to_windowptr(xmir_window *xmir_win)
     return xmir_win->win;
 }
 
+_X_EXPORT void
+xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy)
+{
+    BoxPtr box = RegionExtents(xmir_win->region);
+    *dx = -box.x1;
+    *dy = -box.y1;
+}
+
 static void
 damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 {

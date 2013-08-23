@@ -92,6 +92,9 @@ _X_EXPORT Bool
 xmir_window_is_dirty(xmir_window *xmir_win);
 
 _X_EXPORT void
+xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy);
+
+_X_EXPORT void
 xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);
 
 #endif /* _XMIR_H */
