@@ -247,7 +247,7 @@ index 0000000..80715f8
 +sdk_HEADERS = xmir.h
 diff --git a/hw/xfree86/xmir/xmir-output.c b/hw/xfree86/xmir/xmir-output.c
 new file mode 100644
-index 0000000..679c28d
+index 0000000..2c3a3ac
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-output.c
 @@ -0,0 +1,503 @@
@@ -468,7 +468,7 @@ index 0000000..679c28d
 +    xmir_dump_config(xmir_crtc->config);
 +
 +    if (xmir_crtc->root_fragment->surface != NULL)
-+        mir_surface_release(xmir_crtc->root_fragment->surface, xmir_stupid_callback, NULL);
++        mir_wait_for(mir_surface_release(xmir_crtc->root_fragment->surface, xmir_stupid_callback, NULL));
 +
 +    if (output_id == mir_display_output_id_invalid) {
 +        xmir_crtc->root_fragment->surface = NULL;
