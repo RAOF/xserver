@@ -1,3 +1,11 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM5) saucy; urgency=low
+
+  * xmir.patch: Add API to get the offset of an xmir_window from the underlying
+    WindowPtr. Necessary when the xmir_window is only covering part of the underlying
+    drawable, such as in multi-head setups.
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Fri, 23 Aug 2013 14:28:32 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM4) saucy; urgency=low
 
   * xmir.patch: Add yet more debug output; fix modesetting

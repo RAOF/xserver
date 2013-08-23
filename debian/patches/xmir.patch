@@ -982,10 +982,10 @@ index 0000000..7464644
 +
 diff --git a/hw/xfree86/xmir/xmir-window.c b/hw/xfree86/xmir/xmir-window.c
 new file mode 100644
-index 0000000..6fb94a8
+index 0000000..6060cc7
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-window.c
-@@ -0,0 +1,322 @@
+@@ -0,0 +1,330 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -1184,6 +1184,14 @@ index 0000000..6fb94a8
 +xmir_window_to_windowptr(xmir_window *xmir_win)
 +{
 +    return xmir_win->win;
++}
++
++_X_EXPORT void
++xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy)
++{
++    BoxPtr box = RegionExtents(xmir_win->region);
++    *dx = -box.x1;
++    *dy = -box.y1;
 +}
 +
 +static void
@@ -1534,10 +1542,10 @@ index 0000000..4745734
 +}
 diff --git a/hw/xfree86/xmir/xmir.h b/hw/xfree86/xmir/xmir.h
 new file mode 100644
-index 0000000..979313d
+index 0000000..150a7d5
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir.h
-@@ -0,0 +1,97 @@
+@@ -0,0 +1,100 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -1630,6 +1638,9 @@ index 0000000..979313d
 +
 +_X_EXPORT Bool
 +xmir_window_is_dirty(xmir_window *xmir_win);
++
++_X_EXPORT void
++xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy);
 +
 +_X_EXPORT void
 +xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);
