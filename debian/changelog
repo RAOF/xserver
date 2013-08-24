@@ -1,3 +1,9 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM9) saucy; urgency=low
+
+  * Do all the things!
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Sat, 24 Aug 2013 13:48:37 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM8) saucy; urgency=low
 
   * Resize screen pixmap on screen resize

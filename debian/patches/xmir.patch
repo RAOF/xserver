@@ -247,10 +247,10 @@ index 0000000..80715f8
 +sdk_HEADERS = xmir.h
 diff --git a/hw/xfree86/xmir/xmir-output.c b/hw/xfree86/xmir/xmir-output.c
 new file mode 100644
-index 0000000..d50b8b2
+index 0000000..5ff6af1
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-output.c
-@@ -0,0 +1,523 @@
+@@ -0,0 +1,526 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -333,8 +333,12 @@ index 0000000..d50b8b2
 +                         DisplayModePtr mode)
 +{
 +    for (int i = 0; i < output->num_modes; i++) {
++        xf86Msg(X_INFO, "Checking against mode (%dx%d)\n",
++                output->modes[i].horizontal_resolution,
++                output->modes[i].vertical_resolution);
 +        if (xmir_mir_mode_matches(&output->modes[i], mode)) {
 +            output->current_mode = i;
++            xf86Msg(X_INFO, "Matched mode %d\n", i);
 +            return TRUE;
 +        }
 +    }
@@ -493,9 +497,6 @@ index 0000000..d50b8b2
 +       This is fixed up in xmir_window_create */
 +    xmir_crtc->root_fragment->win = xf86ScrnToScreen(crtc->scrn)->root;
 +
-+    if (xmir_crtc->root_fragment->win != NULL)
-+        xmir_window_enable_damage_tracking(xmir_crtc->root_fragment);
-+
 +    RegionInit(&xmir_crtc->root_fragment->region, &output_bounds, 0);
 +    xmir_crtc->root_fragment->has_free_buffer = TRUE;
 +
@@ -595,10 +596,16 @@ index 0000000..d50b8b2
 +    DisplayModePtr modes = NULL, mode;
 +
 +    for (int i = 0; i < mir_output->num_modes; i++) {
++        /* Check if mode differs only by refresh rate from previous mode and reject */
++        /* TODO: Remove this check and instead handle refresh rate correctly */
++        if (mode != NULL)
++            if (xmir_mir_mode_matches((mir_output->modes + i), mode)
++                continue;
++
 +        char *mode_name = malloc(32);
 +        mode = xf86CVTMode(mir_output->modes[i].horizontal_resolution,
 +                           mir_output->modes[i].vertical_resolution,
-+                           mir_output->modes[i].refresh_rate,
++                           60.0f,
 +                           FALSE, FALSE);
 +        /* And now, because the CVT standard doesn't support such common resolutions as 1366x768... */
 +        mode->VDisplay = mir_output->modes[i].vertical_resolution;
@@ -638,29 +645,21 @@ index 0000000..d50b8b2
 +{
 +    xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(scrn);
 +    ScreenPtr screen = xf86ScrnToScreen(scrn);
-+    xmir_screen *xmir = xmir_screen_get(screen);
 +    PixmapPtr old_screen_pixmap, new_screen_pixmap;
 +
 +    if (scrn->virtualX == width && scrn->virtualY == height)
 +        return TRUE;
 +
-+    scrn->virtualX = width;
-+    scrn->virtualY = height;
-+    scrn->displayWidth = width;
-+
 +    old_screen_pixmap = screen->GetScreenPixmap(screen);
 +    new_screen_pixmap = screen->CreatePixmap(screen, width, height, scrn->depth,
-+                                             0);
++                                             CREATE_PIXMAP_USAGE_BACKING_PIXMAP);
 +
 +    if (!new_screen_pixmap)
 +        return FALSE;
 +
-+    for (int i = 0; xmir->root_window_fragments[i]; i++) {
-+        xmir_window_disable_damage_tracking(xmir->root_window_fragments[i]);
-+    }
-+
-+    screen->SetScreenPixmap(new_screen_pixmap);
-+    screen->DestroyPixmap(old_screen_pixmap);
++    scrn->virtualX = width;
++    scrn->virtualY = height;
++    scrn->displayWidth = width;
 +
 +    for (int i = 0; i < crtc_cfg->num_crtc; i++) {
 +        xf86CrtcPtr crtc = crtc_cfg->crtc[i];
@@ -671,6 +670,9 @@ index 0000000..d50b8b2
 +        xmir_crtc_set_mode_major(crtc, &crtc->mode,
 +                                 crtc->rotation, crtc->x, crtc->y);
 +    }
++
++    screen->SetScreenPixmap(new_screen_pixmap);
++    screen->DestroyPixmap(old_screen_pixmap);
 +
 +    return TRUE;
 +}
@@ -762,6 +764,7 @@ index 0000000..d50b8b2
 +            return FALSE;
 +
 +        xmir->root_window_fragments[i] = xmir_crtc->root_fragment;
++        RegionNull(&xmir_crtc->root_fragment->region);
 +
 +        xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
 +        xf86crtc->driver_private = xmir_crtc;
@@ -1009,10 +1012,10 @@ index 0000000..7464644
 +
 diff --git a/hw/xfree86/xmir/xmir-window.c b/hw/xfree86/xmir/xmir-window.c
 new file mode 100644
-index 0000000..3a4f4c4
+index 0000000..fa46041
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-window.c
-@@ -0,0 +1,332 @@
+@@ -0,0 +1,330 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -1213,12 +1216,10 @@ index 0000000..3a4f4c4
 +    return xmir_win->win;
 +}
 +
-+_X_EXPORT void
-+xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy)
++_X_EXPORT BoxPtr
++xmir_window_get_drawable_region(xmir_window *xmir_win)
 +{
-+    BoxPtr box = RegionExtents(&xmir_win->region);
-+    *dx = -box->x1;
-+    *dy = -box->y1;
++    return RegionExtents(&xmir_win->region);
 +}
 +
 +static void
@@ -1571,7 +1572,7 @@ index 0000000..4745734
 +}
 diff --git a/hw/xfree86/xmir/xmir.h b/hw/xfree86/xmir/xmir.h
 new file mode 100644
-index 0000000..150a7d5
+index 0000000..a1bbde6
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir.h
 @@ -0,0 +1,100 @@
@@ -1668,8 +1669,8 @@ index 0000000..150a7d5
 +_X_EXPORT Bool
 +xmir_window_is_dirty(xmir_window *xmir_win);
 +
-+_X_EXPORT void
-+xmir_window_get_drawable_offset(xmir_window *xmir_win, int16_t *dx, int16_t *dy);
++_X_EXPORT BoxPtr
++xmir_window_get_drawable_region(xmir_window *xmir_win);
 +
 +_X_EXPORT void
 +xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);
