@@ -278,7 +278,7 @@ index 0000000..80715f8
 +sdk_HEADERS = xmir.h
 diff --git a/hw/xfree86/xmir/xmir-output.c b/hw/xfree86/xmir/xmir-output.c
 new file mode 100644
-index 0000000..59e2e5e
+index 0000000..bb7f7b0
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-output.c
 @@ -0,0 +1,529 @@
@@ -625,7 +625,7 @@ index 0000000..59e2e5e
 +xmir_output_get_modes(xf86OutputPtr xf86output)
 +{
 +    MirDisplayOutput *mir_output = xf86output->driver_private;
-+    DisplayModePtr modes = NULL, mode;
++    DisplayModePtr modes = NULL, mode = NULL;
 +
 +    for (int i = 0; i < mir_output->num_modes; i++) {
 +        /* Check if mode differs only by refresh rate from previous mode and reject */
@@ -1046,10 +1046,10 @@ index 0000000..7464644
 +
 diff --git a/hw/xfree86/xmir/xmir-window.c b/hw/xfree86/xmir/xmir-window.c
 new file mode 100644
-index 0000000..fa46041
+index 0000000..89c5448
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-window.c
-@@ -0,0 +1,330 @@
+@@ -0,0 +1,340 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -1256,6 +1256,16 @@ index 0000000..fa46041
 +    return RegionExtents(&xmir_win->region);
 +}
 +
++_X_EXPORT int32_t
++xmir_window_get_stride(xmir_window *xmir_win)
++{
++    MirBufferPackage *package;
++
++    mir_surface_get_current_buffer(xmir_win->surface, &package);
++
++    return package->stride;
++}
++
 +static void
 +damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 +{
@@ -1382,10 +1392,10 @@ index 0000000..fa46041
 +}
 diff --git a/hw/xfree86/xmir/xmir.c b/hw/xfree86/xmir/xmir.c
 new file mode 100644
-index 0000000..4745734
+index 0000000..8479424
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir.c
-@@ -0,0 +1,218 @@
+@@ -0,0 +1,222 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -1427,6 +1437,7 @@ index 0000000..4745734
 +
 +#include "list.h"
 +#include "xf86.h"
++#include "xf86Crtc.h"
 +#include "xf86Priv.h"
 +
 +#include <xf86drm.h>
@@ -1523,6 +1534,9 @@ index 0000000..4745734
 +    if (!xmir_screen_init_window(screen, xmir))
 +        return FALSE;
 +
++    if (!xf86_cursors_init(screen, 0,0,0))
++        xf86Msg(X_WARNING, "xf86Cursor initialisation failed\n");
++
 +    return TRUE;
 +}
 +
@@ -1606,10 +1620,10 @@ index 0000000..4745734
 +}
 diff --git a/hw/xfree86/xmir/xmir.h b/hw/xfree86/xmir/xmir.h
 new file mode 100644
-index 0000000..a1bbde6
+index 0000000..78396a3
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir.h
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,103 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -1705,6 +1719,9 @@ index 0000000..a1bbde6
 +
 +_X_EXPORT BoxPtr
 +xmir_window_get_drawable_region(xmir_window *xmir_win);
++
++_X_EXPORT int32_t
++xmir_window_get_stride(xmir_window *xmir_win);
 +
 +_X_EXPORT void
 +xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);

@@ -1,3 +1,10 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM14) saucy; urgency=low
+
+  * XMir: Initialise xf86Cursor machinery on screen init
+  * XMir: Expose xmir_window_get_stride
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Sun, 25 Aug 2013 20:48:31 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM13) saucy; urgency=low
 
   * Disable the xvfb-run test that keeps hanging
