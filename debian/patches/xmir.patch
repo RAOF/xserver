@@ -213,6 +213,22 @@ index 58cfe0a..4630e9e 100644
  
  extern _X_EXPORT RootWinPropPtr *xf86RegisteredPropertiesTable;
  
+diff --git a/hw/xfree86/ramdac/xf86Cursor.c b/hw/xfree86/ramdac/xf86Cursor.c
+index 860704e..177b15d 100644
+--- a/hw/xfree86/ramdac/xf86Cursor.c
++++ b/hw/xfree86/ramdac/xf86Cursor.c
+@@ -58,7 +58,10 @@ xf86InitCursor(ScreenPtr pScreen, xf86CursorInfoPtr infoPtr)
+     xf86CursorScreenPtr ScreenPriv;
+     miPointerScreenPtr PointPriv;
+ 
+-    if (!xf86InitHardwareCursor(pScreen, infoPtr))
++    /* If we can't create a hardware cursor don't bother initialising HW cursor support */
++    if (infoPtr->MaxWidth != 0 &&
++        infoPtr->MaxHeight != 0 &&
++        !xf86InitHardwareCursor(pScreen, infoPtr))
+         return FALSE;
+ 
+     if (!dixRegisterPrivateKey(&xf86CursorScreenKeyRec, PRIVATE_SCREEN, 0))
 diff --git a/hw/xfree86/xmir/Makefile.am b/hw/xfree86/xmir/Makefile.am
 new file mode 100644
 index 0000000..80715f8
@@ -247,10 +263,10 @@ index 0000000..80715f8
 +sdk_HEADERS = xmir.h
 diff --git a/hw/xfree86/xmir/xmir-output.c b/hw/xfree86/xmir/xmir-output.c
 new file mode 100644
-index 0000000..d9bb1fc
+index 0000000..59e2e5e
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-output.c
-@@ -0,0 +1,527 @@
+@@ -0,0 +1,529 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -674,6 +690,8 @@ index 0000000..d9bb1fc
 +
 +    screen->SetScreenPixmap(new_screen_pixmap);
 +    screen->DestroyPixmap(old_screen_pixmap);
++
++    xf86_reload_cursors(screen);
 +
 +    return TRUE;
 +}

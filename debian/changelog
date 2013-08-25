@@ -1,3 +1,11 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM11) saucy; urgency=low
+
+  * Allow xf86_cursors_init to succeed in the absence of HW cursor support.
+    The unadorned misprite software cursor code dies a horrible screaming death
+    once the screen is resized
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Sun, 25 Aug 2013 17:12:08 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM10) saucy; urgency=low
 
   * Turn on outputs when required
