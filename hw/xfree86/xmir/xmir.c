@@ -39,6 +39,7 @@
 
 #include "list.h"
 #include "xf86.h"
+#include "xf86Crtc.h"
 #include "xf86Priv.h"
 
 #include <xf86drm.h>
