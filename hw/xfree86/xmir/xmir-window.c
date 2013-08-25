@@ -204,6 +204,16 @@ xmir_window_get_drawable_region(xmir_window *xmir_win)
     return RegionExtents(&xmir_win->region);
 }
 
+_X_EXPORT int32_t
+xmir_window_get_stride(xmir_window *xmir_win)
+{
+    MirBufferPackage *package;
+
+    mir_surface_get_current_buffer(xmir_win->surface, &package);
+
+    return package->stride;
+}
+
 static void
 damage_report(DamagePtr damage, RegionPtr region, void *ctx)
 {

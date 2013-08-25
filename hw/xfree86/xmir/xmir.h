@@ -94,6 +94,9 @@ xmir_window_is_dirty(xmir_window *xmir_win);
 _X_EXPORT BoxPtr
 xmir_window_get_drawable_region(xmir_window *xmir_win);
 
+_X_EXPORT int32_t
+xmir_window_get_stride(xmir_window *xmir_win);
+
 _X_EXPORT void
 xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);
 
