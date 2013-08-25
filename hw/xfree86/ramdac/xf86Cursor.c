@@ -58,6 +58,8 @@ xf86InitCursor(ScreenPtr pScreen, xf86CursorInfoPtr infoPtr)
     xf86CursorScreenPtr ScreenPriv;
     miPointerScreenPtr PointPriv;
 
+    infoPtr->pScrn = xf86ScreenToScrn(pScreen);
+    
     /* If we can't create a hardware cursor don't bother initialising HW cursor support */
     if (infoPtr->MaxWidth != 0 &&
         infoPtr->MaxHeight != 0 &&
