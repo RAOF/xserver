@@ -135,6 +135,9 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
     if (!xmir_screen_init_window(screen, xmir))
         return FALSE;
 
+    if (!xf86_cursors_init(screen, 0,0,0))
+        xf86Msg(X_WARNING, "xf86Cursor initialisation failed\n");
+
     return TRUE;
 }
 
