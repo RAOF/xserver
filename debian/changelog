@@ -1,3 +1,15 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM13) saucy; urgency=low
+
+  * Disable the xvfb-run test that keeps hanging
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Sun, 25 Aug 2013 19:02:37 +1000
+
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM12) saucy; urgency=low
+
+  * Whoops, really check exact changes locally!
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Sun, 25 Aug 2013 17:49:28 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM11) saucy; urgency=low
 
   * Allow xf86_cursors_init to succeed in the absence of HW cursor support.
