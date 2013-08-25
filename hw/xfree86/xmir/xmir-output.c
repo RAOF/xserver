@@ -341,7 +341,7 @@ static DisplayModePtr
 xmir_output_get_modes(xf86OutputPtr xf86output)
 {
     MirDisplayOutput *mir_output = xf86output->driver_private;
-    DisplayModePtr modes = NULL, mode;
+    DisplayModePtr modes = NULL, mode = NULL;
 
     for (int i = 0; i < mir_output->num_modes; i++) {
         /* Check if mode differs only by refresh rate from previous mode and reject */
