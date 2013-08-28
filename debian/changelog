@@ -1,3 +1,9 @@
+xorg-server (2:1.14.2.901-2ubuntu3+xmirMM15) saucy; urgency=low
+
+  * Fixup root window pixmap on resize
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Wed, 28 Aug 2013 17:35:36 +1000
+
 xorg-server (2:1.14.2.901-2ubuntu3+xmirMM14) saucy; urgency=low
 
   * XMir: Initialise xf86Cursor machinery on screen init

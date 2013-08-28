@@ -278,10 +278,10 @@ index 0000000..80715f8
 +sdk_HEADERS = xmir.h
 diff --git a/hw/xfree86/xmir/xmir-output.c b/hw/xfree86/xmir/xmir-output.c
 new file mode 100644
-index 0000000..bb7f7b0
+index 0000000..3bff93b
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-output.c
-@@ -0,0 +1,529 @@
+@@ -0,0 +1,530 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
@@ -704,6 +704,7 @@ index 0000000..bb7f7b0
 +    }
 +
 +    screen->SetScreenPixmap(new_screen_pixmap);
++    screen->SetWindowPixmap(screen->root, new_screen_pixmap);
 +    screen->DestroyPixmap(old_screen_pixmap);
 +
 +    xf86_reload_cursors(screen);
