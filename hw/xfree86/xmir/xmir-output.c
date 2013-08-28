@@ -420,6 +420,7 @@ xmir_resize(ScrnInfoPtr scrn, int width, int height)
     }
 
     screen->SetScreenPixmap(new_screen_pixmap);
+    screen->SetWindowPixmap(screen->root, new_screen_pixmap);
     screen->DestroyPixmap(old_screen_pixmap);
 
     xf86_reload_cursors(screen);
