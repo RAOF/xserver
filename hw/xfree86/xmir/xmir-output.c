@@ -388,6 +388,36 @@ static const xf86OutputFuncsRec xmir_output_funcs = {
     .destroy    = xmir_output_destroy
 };
 
+
+struct xmir_visit_set_pixmap_window {
+    PixmapPtr old, new;
+};
+
+static int
+xmir_visit_set_window_pixmap(WindowPtr window, pointer data)
+{
+    struct xmir_visit_set_pixmap_window *visit = data;
+
+    if (window->drawable.pScreen->GetWindowPixmap(window) == visit->old) {
+        window->drawable.pScreen->SetWindowPixmap(window, visit->new);
+        return WT_WALKCHILDREN;
+    }
+
+    return WT_DONTWALKCHILDREN;
+}
+
+static void
+xmir_set_screen_pixmap(PixmapPtr old_front, PixmapPtr new_front)
+{
+    struct xmir_visit_set_pixmap_window visit = {
+        .old = old_front,
+        .new = new_front
+    };
+    (old_front->drawable.pScreen->SetScreenPixmap)(new_front);
+
+    TraverseTree(old_front->drawable.pScreen->root, &xmir_visit_set_window_pixmap, &visit);
+}
+
 static Bool
 xmir_resize(ScrnInfoPtr scrn, int width, int height)
 {
@@ -419,8 +449,7 @@ xmir_resize(ScrnInfoPtr scrn, int width, int height)
                                  crtc->rotation, crtc->x, crtc->y);
     }
 
-    screen->SetScreenPixmap(new_screen_pixmap);
-    screen->SetWindowPixmap(screen->root, new_screen_pixmap);
+    xmir_set_screen_pixmap(old_screen_pixmap, new_screen_pixmap);
     screen->DestroyPixmap(old_screen_pixmap);
 
     xf86_reload_cursors(screen);
