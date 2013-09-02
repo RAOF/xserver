@@ -33,11 +33,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <atomic_ops.h>
 
 #include <xorg-config.h>
 #include "xmir.h"
 #include "xmir-private.h"
 #include "xf86Crtc.h"
+#include "xf86Priv.h"
 
 struct xmir_crtc {
     xmir_screen             *xmir;
@@ -48,6 +50,40 @@ struct xmir_crtc {
 static void
 crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
 {
+}
+
+static void
+xmir_surface_event_handler(MirSurface *surf, MirEvent const *event, void *ctx)
+{
+    xmir_screen *xmir = ctx;
+    Bool new_focus;
+    if (event->type == mir_event_type_surface) {
+        MirSurfaceEvent const *surf_event = (MirSurfaceEvent const *)event;
+        if (surf_event->attrib == mir_surface_attrib_focus) {
+            switch(surf_event->value) {
+            case mir_surface_unfocused:
+            {
+                AO_t val = AO_fetch_and_sub1(&xmir->focus_count);
+                if (val == 0) {
+                    new_focus = FALSE;
+                    xmir_post_to_eventloop(xmir->focus_event_handler, &new_focus);
+                }
+                if (val < 0)
+                    xf86Msg(X_ERROR, "[xmir] Focus count dropped below 0\n");
+
+                break;
+            }
+            case mir_surface_focused:
+                if (AO_fetch_and_add1(&xmir->focus_count) == 1) {
+                    new_focus = TRUE;
+                    xmir_post_to_eventloop(xmir->focus_event_handler, &new_focus);
+                }
+                break;
+            default:
+                xf86Msg(X_WARNING, "[xmir] Unknown focus event received\n");
+            }
+        }
+    }
 }
 
 static void
@@ -187,6 +223,10 @@ xmir_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
         .x2 = x + mode->HDisplay,
         .y2 = y + mode->VDisplay
     };
+    MirEventDelegate focus_delegate = {
+        .callback = &xmir_surface_event_handler,
+        .context = xmir_screen_get(xf86ScrnToScreen(crtc->scrn))
+    };
     struct xmir_crtc *xmir_crtc = crtc->driver_private;
     uint32_t output_id = mir_display_output_id_invalid;
     MirSurface *surface;
@@ -239,6 +279,8 @@ xmir_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
                 mir_surface_get_error_message(surface));
         return FALSE;
     }
+    mir_surface_set_event_handler(surface, &focus_delegate);
+
     xmir_crtc->root_fragment->surface = surface;
 
     /* During X server init this will be NULL.
@@ -484,6 +526,15 @@ xmir_display_config_callback(MirConnection *unused, void *ctx)
     xmir_post_to_eventloop(xmir->hotplug_event_handler, &xmir->scrn);
 }
 
+static void xmir_handle_focus_event(void *ctx)
+{
+    Bool has_focus = *(Bool *)ctx;
+
+    if ((xf86VTOwner() && !has_focus) ||
+        (!xf86VTOwner() && has_focus))
+        xf86Info.vtRequestsPending = TRUE;
+}
+
 Bool
 xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
 {
@@ -499,6 +550,14 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
                          320, 320,
                          INT16_MAX, INT16_MAX);
 
+
+    /* Hook up focus -> VT switch proxy */
+    xmir->focus_count = 0;
+    xmir->focus_event_handler = 
+        xmir_register_handler(&xmir_handle_focus_event,
+                              sizeof (Bool));
+    if (xmir->focus_event_handler == NULL)
+        return FALSE;
 
     /* Hook up hotplug notification */
     xmir->hotplug_event_handler =

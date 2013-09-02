@@ -1150,11 +1150,11 @@ if test "x$XINERAMA" = xyes; then
 fi
 
 if test "x$XMIR" != xno; then
-	PKG_CHECK_MODULES([XMIR], [mirclient], [XMIR=yes], [XMIR=no])
+	PKG_CHECK_MODULES([XMIR], [mirclient atomic_ops], [XMIR=yes], [XMIR=no])
 	AC_SUBST([XMIR_LIBS])
         AC_SUBST([XMIR_CFLAGS])
         AC_DEFINE(XMIR, 1, [Support Mir nested mode])
-	SDK_REQUIRED_MODULES="$SDK_REQUIRED_MODULES mirclient"
+	SDK_REQUIRED_MODULES="$SDK_REQUIRED_MODULES mirclient atomic_ops"
 fi	      
 AM_CONDITIONAL(XMIR, [test "x$XMIR" = xyes])
 

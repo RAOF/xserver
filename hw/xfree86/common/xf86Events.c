@@ -466,7 +466,7 @@ xf86VTSwitch(void)
 
         xf86AccessLeave();      /* We need this here, otherwise */
 
-        if (!xf86VTSwitchAway()) {
+        if (!xorgMir && !xf86VTSwitchAway()) {
             /*
              * switch failed
              */
@@ -522,7 +522,7 @@ xf86VTSwitch(void)
     }
     else {
         DebugF("xf86VTSwitch: Entering\n");
-        if (!xf86VTSwitchTo())
+        if (!xorgMir && !xf86VTSwitchTo())
             return;
 
 #ifdef XF86PM
