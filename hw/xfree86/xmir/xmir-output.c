@@ -64,6 +64,7 @@ xmir_surface_event_handler(MirSurface *surf, MirEvent const *event, void *ctx)
             case mir_surface_unfocused:
             {
                 AO_t val = AO_fetch_and_sub1(&xmir->focus_count);
+                xf86Msg(X_INFO, "[XMir] Received unfocus event. Focus count %d\n", val);
                 if (val == 0) {
                     new_focus = FALSE;
                     xmir_post_to_eventloop(xmir->focus_event_handler, &new_focus);
@@ -74,11 +75,15 @@ xmir_surface_event_handler(MirSurface *surf, MirEvent const *event, void *ctx)
                 break;
             }
             case mir_surface_focused:
-                if (AO_fetch_and_add1(&xmir->focus_count) == 1) {
+            {
+                AO_t val;
+                if ((val = AO_fetch_and_add1(&xmir->focus_count)) == 1) {
                     new_focus = TRUE;
                     xmir_post_to_eventloop(xmir->focus_event_handler, &new_focus);
                 }
+                xf86Msg(X_INFO, "[XMir] Received focus event. Focus count %d\n", val);
                 break;
+            }
             default:
                 xf86Msg(X_WARNING, "[xmir] Unknown focus event received\n");
             }
@@ -151,7 +156,7 @@ xmir_update_outputs_for_crtc(xf86CrtcPtr crtc, DisplayModePtr mode, int x, int y
 static void
 xmir_disable_unused_outputs(xf86CrtcPtr crtc)
 {
-    xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(crtc->scrn);
+    xf86CrtcConigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(crtc->scrn);
 
     for (int i = 0; i < crtc_cfg->num_output; i++)
         /* If any outputs are no longer associated with a CRTC, disable them */
@@ -529,6 +534,8 @@ xmir_display_config_callback(MirConnection *unused, void *ctx)
 static void xmir_handle_focus_event(void *ctx)
 {
     Bool has_focus = *(Bool *)ctx;
+
+    xf86Msg(X_INFO, "[XMir] Handling focus event, new_focus = %s\n", has_focus ? "TRUE" : "FALSE");
 
     if ((xf86VTOwner() && !has_focus) ||
         (!xf86VTOwner() && has_focus))
