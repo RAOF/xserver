@@ -126,6 +126,40 @@ xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver)
     return TRUE;
 }
 
+static void xmir_handle_focus_event(void *ctx)
+{
+    Bool new_focus = *(Bool *)ctx;
+    xf86Msg(X_INFO, "[XMir] Handling focus event, new_focus = %s\n", new_focus ? "TRUE" : "FALSE");
+
+    /* TODO: Split xf86VTSwitch out so that we don't need to check xf86VTOwner*/
+    /* TODO: Disable input on startup until we receive a usc ACK */
+    if (new_focus && !xf86VTOwner())
+        xf86VTSwitch();
+
+    if (!new_focus && xf86VTOwner())
+        xf86VTSwitch();
+}
+
+static void xmir_handle_lifecycle_event(MirConnection *unused, MirLifecycleState state, void *ctx)
+{
+    (void)unused;
+    xmir_screen *xmir = ctx;
+    Bool new_focus;
+    switch(state)
+    {
+    case mir_lifecycle_state_will_suspend:
+        new_focus = FALSE;
+        break;
+    case mir_lifecycle_state_resumed:
+        new_focus = TRUE;
+        break;
+    default:
+        xf86Msg(X_ERROR, "Received unknown Mir lifetime event\n");
+        return;
+    }
+    xmir_post_to_eventloop(xmir->focus_event_handler, &new_focus);
+}
+
 _X_EXPORT Bool
 xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
 {
@@ -138,6 +172,17 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
 
     if (!xf86_cursors_init(screen, 0,0,0))
         xf86Msg(X_WARNING, "xf86Cursor initialisation failed\n");
+
+    /* Hook up focus -> VT switch proxy */
+    xmir->focus_event_handler = 
+        xmir_register_handler(&xmir_handle_focus_event,
+                              sizeof(Bool));
+    if (xmir->focus_event_handler == NULL)
+        return FALSE;
+
+    mir_connection_set_lifecycle_event_callback(xmir_connection_get(),
+                                                &xmir_handle_lifecycle_event,
+                                                xmir);
 
     return TRUE;
 }

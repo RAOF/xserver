@@ -105,8 +105,6 @@ extern fd_set EnabledDevices;
 extern void (*xf86OSPMClose) (void);
 #endif
 
-static void xf86VTSwitch(void);
-
 /*
  * Allow arbitrary drivers or other XFree86 code to register with our main
  * Wakeup handler.
@@ -410,7 +408,7 @@ xf86ReleaseKeys(DeviceIntPtr pDev)
  * xf86VTSwitch --
  *      Handle requests for switching the vt.
  */
-static void
+_X_EXPORT void
 xf86VTSwitch(void)
 {
     int i;
