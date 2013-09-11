@@ -142,8 +142,8 @@ xmir_submit_rendering_for_window(xmir_window *xmir_win,
     RegionPtr tracking;
 
     xmir_win->has_free_buffer = FALSE;
-    mir_surface_swap_buffers(xmir_win->surface, &handle_buffer_received, xmir_win);
     tracking = damage_region_for_current_buffer(xmir_win);
+    mir_surface_swap_buffers(xmir_win->surface, &handle_buffer_received, xmir_win);
 
     if (region == NULL)
         RegionEmpty(tracking);
