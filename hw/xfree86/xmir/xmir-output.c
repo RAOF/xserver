@@ -50,6 +50,35 @@ crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
 {
 }
 
+static const char*
+xmir_get_output_type_str(MirDisplayOutput *mir_output)
+{
+    const char *str = "Invalid";
+
+    switch(mir_output->type)
+    {
+    case mir_display_output_type_vga: str = "VGA"; break;
+    case mir_display_output_type_dvii: str = "DVI"; break;
+    case mir_display_output_type_dvid: str = "DVI"; break;
+    case mir_display_output_type_dvia: str = "DVI"; break;
+    case mir_display_output_type_composite: str = "Composite"; break;
+    case mir_display_output_type_svideo: str = "TV"; break;
+    case mir_display_output_type_lvds: str = "LVDS"; break;
+    case mir_display_output_type_component: str = "CTV"; break;
+    case mir_display_output_type_ninepindin: str = "DIN"; break;
+    case mir_display_output_type_displayport: str = "DP"; break;
+    case mir_display_output_type_hdmia: str = "HDMI"; break;
+    case mir_display_output_type_hdmib: str = "HDMI"; break;
+    case mir_display_output_type_tv: str = "TV"; break;
+    case mir_display_output_type_edp: str = "eDP"; break;
+
+    case mir_display_output_type_unknown: str = "None"; break;
+    default: break;
+    }
+
+    return str;
+}
+
 static void
 xmir_output_populate(xf86OutputPtr xf86output, MirDisplayOutput *output)
 {
@@ -512,6 +541,9 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     int i;
     MirDisplayConfiguration *display_config;
     xf86CrtcPtr xf86crtc;
+    int output_type_count[mir_display_output_type_edp + 1];
+
+    memset(output_type_count, 0, sizeof output_type_count);
 
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
@@ -544,12 +576,17 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     for (i = 0; i < display_config->num_outputs; i++) {
         xf86OutputPtr xf86output;
         char name[32];
+        MirDisplayOutput *mir_output = &display_config->outputs[i];
+        const char* output_type_str = xmir_get_output_type_str(mir_output);
+        int type_count = i;
 
-        snprintf(name, sizeof name, "XMIR-%d", i);
+        if (mir_output->type >= 0 && mir_output->type <= mir_display_output_type_edp)
+            type_count = output_type_count[mir_output->type]++;
 
+        snprintf(name, sizeof name, "%s-%d", output_type_str, type_count);
         xf86output = xf86OutputCreate(scrn, &xmir_output_funcs, name);
 
-        xmir_output_populate(xf86output, display_config->outputs + i);
+        xmir_output_populate(xf86output, mir_output);
     }
 
     /* TODO: Get the number of CRTCs from Mir */
