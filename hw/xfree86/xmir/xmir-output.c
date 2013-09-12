@@ -385,7 +385,7 @@ xmir_output_get_modes(xf86OutputPtr xf86output)
         DisplayModePtr mode = xmir_create_xf86mode(&mir_output->modes[i]);
 
         mode->type = M_T_DRIVER;
-        if (i == 0)
+        if (i == mir_output->preferred_mode)
             mode->type |= M_T_PREFERRED;
 
         modes = xf86ModesAdd(modes, mode);
