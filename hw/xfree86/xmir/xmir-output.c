@@ -589,8 +589,7 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
         xmir_output_populate(xf86output, mir_output);
     }
 
-    /* TODO: Get the number of CRTCs from Mir */
-    for (i = 0; i < display_config->num_outputs; i++) {
+    for (i = 0; i < display_config->cards[0].max_simultaneous_outputs; i++) {
         struct xmir_crtc *xmir_crtc = malloc(sizeof *xmir_crtc);
         if (xmir_crtc == NULL)
             return FALSE;
