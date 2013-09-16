@@ -47,8 +47,32 @@ struct xmir_crtc {
 };
 
 static void
-crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
+xmir_crtc_dpms(xf86CrtcPtr crtc, int mode)
 {
+    xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(crtc->scrn);
+    struct xmir_crtc *xmir_crtc = crtc->driver_private;
+
+    for (int i = 0; i < crtc_cfg->num_output; i++) {
+        /* If this output should be driven by our "CRTC", set DPMS mode */
+        MirDisplayOutput *output = crtc_cfg->output[i]->driver_private;
+        if (crtc_cfg->output[i]->crtc == crtc) {
+            xf86Msg(X_INFO, "Setting DPMS mode for output %d to %d\n", i, mode);
+            switch (mode) {
+            case DPMSModeOn:
+                output->power_mode = mir_power_mode_on;
+                break;
+            case DPMSModeStandby:
+                output->power_mode = mir_power_mode_standby;
+                break;
+            case DPMSModeSuspend:
+                output->power_mode = mir_power_mode_suspend;
+                break;
+            case DPMSModeOff:
+                output->power_mode = mir_power_mode_off;
+                break;
+            }
+        }
+    }
 }
 
 static const char*
