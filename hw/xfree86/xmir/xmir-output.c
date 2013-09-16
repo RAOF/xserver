@@ -51,6 +51,35 @@ crtc_dpms(xf86CrtcPtr drmmode_crtc, int mode)
 {
 }
 
+static const char*
+xmir_get_output_type_str(MirDisplayOutput *mir_output)
+{
+    const char *str = "Invalid";
+
+    switch(mir_output->type)
+    {
+    case mir_display_output_type_vga: str = "VGA"; break;
+    case mir_display_output_type_dvii: str = "DVI"; break;
+    case mir_display_output_type_dvid: str = "DVI"; break;
+    case mir_display_output_type_dvia: str = "DVI"; break;
+    case mir_display_output_type_composite: str = "Composite"; break;
+    case mir_display_output_type_svideo: str = "TV"; break;
+    case mir_display_output_type_lvds: str = "LVDS"; break;
+    case mir_display_output_type_component: str = "CTV"; break;
+    case mir_display_output_type_ninepindin: str = "DIN"; break;
+    case mir_display_output_type_displayport: str = "DP"; break;
+    case mir_display_output_type_hdmia: str = "HDMI"; break;
+    case mir_display_output_type_hdmib: str = "HDMI"; break;
+    case mir_display_output_type_tv: str = "TV"; break;
+    case mir_display_output_type_edp: str = "eDP"; break;
+
+    case mir_display_output_type_unknown: str = "None"; break;
+    default: break;
+    }
+
+    return str;
+}
+
 static void
 xmir_output_populate(xf86OutputPtr xf86output, MirDisplayOutput *output)
 {
@@ -68,12 +97,33 @@ xmir_output_populate(xf86OutputPtr xf86output, MirDisplayOutput *output)
     xf86output->subpixel_order = SubPixelUnknown;
 }
 
-static Bool
-xmir_mir_mode_matches(MirDisplayMode *mir_mode, DisplayModePtr X_mode)
+static DisplayModePtr
+xmir_create_xf86mode(const struct MirDisplayMode *mir_mode)
 {
-    return (mir_mode->vertical_resolution == X_mode->VDisplay &&
-            mir_mode->horizontal_resolution == X_mode->HDisplay /*&&
-            fabs(mir_mode->refresh_rate - X_mode->VRefresh) < 0.01*/);
+    DisplayModePtr mode;
+
+    mode = xf86CVTMode(mir_mode->horizontal_resolution,
+                       mir_mode->vertical_resolution,
+                       mir_mode->refresh_rate,
+                       FALSE, FALSE);
+
+    /*
+     * And now, because the CVT standard doesn't support such common
+     * resolutions as 1366x768...
+     */
+    mode->VDisplay = mir_mode->vertical_resolution;
+    mode->HDisplay = mir_mode->horizontal_resolution;
+
+    xf86SetModeDefaultName(mode);
+
+    return mode;
+}
+
+static void
+xmir_free_xf86mode(DisplayModePtr mode)
+{
+    free(mode->name);
+    free(mode);
 }
 
 static Bool
@@ -81,10 +131,18 @@ xmir_set_mode_for_output(MirDisplayOutput *output,
                          DisplayModePtr mode)
 {
     for (int i = 0; i < output->num_modes; i++) {
-        xf86Msg(X_INFO, "Checking against mode (%dx%d)\n",
+        Bool modes_equal = FALSE;
+        DisplayModePtr mir_mode = NULL;
+        xf86Msg(X_INFO, "Checking against mode (%dx%d)@%.2f\n",
                 output->modes[i].horizontal_resolution,
-                output->modes[i].vertical_resolution);
-        if (xmir_mir_mode_matches(&output->modes[i], mode)) {
+                output->modes[i].vertical_resolution,
+                output->modes[i].refresh_rate);
+
+        mir_mode = xmir_create_xf86mode(&output->modes[i]);
+        modes_equal = xf86ModesEqual(mode, mir_mode);
+        xmir_free_xf86mode(mir_mode);
+
+        if (modes_equal) {
             output->current_mode = i;
             output->used = 1;
             xf86Msg(X_INFO, "Matched mode %d\n", i);
@@ -144,6 +202,15 @@ xmir_dump_config(MirDisplayConfiguration *config)
           config->outputs[i].used ? config->outputs[i].modes[config->outputs[i].current_mode].refresh_rate : 0,
 	      config->outputs[i].position_x,
 	      config->outputs[i].position_y);
+      for (int m = 0; m < config->outputs[i].num_modes; m++)
+      {
+        xf86Msg(X_INFO, "  mode %d: (%d x %d @ %.2f)\n",
+                m,
+                config->outputs[i].modes[m].horizontal_resolution,
+
+                config->outputs[i].modes[m].vertical_resolution,
+                config->outputs[i].modes[m].refresh_rate);
+      }
     }
 }
 
@@ -207,10 +274,10 @@ xmir_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
     if (mode->HDisplay == 0 || mode->VDisplay == 0)
         return FALSE;    
 
-    xf86Msg(X_INFO, "Initial configuration:\n");
+    xf86Msg(X_INFO, "Initial configuration for crtc %p:\n", crtc);
     xmir_dump_config(xmir_crtc->config);
 
-    xf86Msg(X_INFO, "Setting mode to %dx%d (%.2f)", mode->HDisplay, mode->VDisplay, mode->VRefresh);
+    xf86Msg(X_INFO, "Setting mode to %dx%d (%.2f)\n", mode->HDisplay, mode->VDisplay, mode->VRefresh);
     output_id = xmir_update_outputs_for_crtc(crtc, mode, x, y);
     xmir_disable_unused_outputs(crtc);
 
@@ -354,31 +421,15 @@ static DisplayModePtr
 xmir_output_get_modes(xf86OutputPtr xf86output)
 {
     MirDisplayOutput *mir_output = xf86output->driver_private;
-    DisplayModePtr modes = NULL, mode = NULL;
+    DisplayModePtr modes = NULL;
 
     for (int i = 0; i < mir_output->num_modes; i++) {
-        /* Check if mode differs only by refresh rate from previous mode and reject */
-        /* TODO: Remove this check and instead handle refresh rate correctly */
-        if (mode != NULL)
-            if (xmir_mir_mode_matches((mir_output->modes + i), mode))
-                continue;
-
-        char *mode_name = malloc(32);
-        mode = xf86CVTMode(mir_output->modes[i].horizontal_resolution,
-                           mir_output->modes[i].vertical_resolution,
-                           60.0f,
-                           FALSE, FALSE);
-        /* And now, because the CVT standard doesn't support such common resolutions as 1366x768... */
-        mode->VDisplay = mir_output->modes[i].vertical_resolution;
-        mode->HDisplay = mir_output->modes[i].horizontal_resolution;
+        DisplayModePtr mode = xmir_create_xf86mode(&mir_output->modes[i]);
 
         mode->type = M_T_DRIVER;
-        /* TODO: Get preferred mode from Mir, or get a guarantee that the first mode is preferred */
-        if (i == 0)
+        if (i == mir_output->preferred_mode)
             mode->type |= M_T_PREFERRED;
 
-        snprintf(mode_name, 32, "%dx%d", mode->HDisplay, mode->VDisplay);
-        mode->name = mode_name;
         modes = xf86ModesAdd(modes, mode);
     }
     /* TODO: Get Mir to send us the EDID blob and add that */
@@ -503,6 +554,9 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     int i;
     MirDisplayConfiguration *display_config;
     xf86CrtcPtr xf86crtc;
+    int output_type_count[mir_display_output_type_edp + 1];
+
+    memset(output_type_count, 0, sizeof output_type_count);
 
     /* Set up CRTC config functions */
     xf86CrtcConfigInit(scrn, &config_funcs);
@@ -534,16 +588,20 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     for (i = 0; i < display_config->num_outputs; i++) {
         xf86OutputPtr xf86output;
         char name[32];
+        MirDisplayOutput *mir_output = &display_config->outputs[i];
+        const char* output_type_str = xmir_get_output_type_str(mir_output);
+        int type_count = i;
 
-        snprintf(name, sizeof name, "XMIR-%d", i);
+        if (mir_output->type >= 0 && mir_output->type <= mir_display_output_type_edp)
+            type_count = output_type_count[mir_output->type]++;
 
+        snprintf(name, sizeof name, "%s-%d", output_type_str, type_count);
         xf86output = xf86OutputCreate(scrn, &xmir_output_funcs, name);
 
-        xmir_output_populate(xf86output, display_config->outputs + i);
+        xmir_output_populate(xf86output, mir_output);
     }
 
-    /* TODO: Get the number of CRTCs from Mir */
-    for (i = 0; i < display_config->num_outputs; i++) {
+    for (i = 0; i < display_config->cards[0].max_simultaneous_outputs; i++) {
         struct xmir_crtc *xmir_crtc = malloc(sizeof *xmir_crtc);
         if (xmir_crtc == NULL)
             return FALSE;
