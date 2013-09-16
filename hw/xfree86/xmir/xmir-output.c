@@ -50,7 +50,6 @@ static void
 xmir_crtc_dpms(xf86CrtcPtr crtc, int mode)
 {
     xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(crtc->scrn);
-    struct xmir_crtc *xmir_crtc = crtc->driver_private;
 
     for (int i = 0; i < crtc_cfg->num_output; i++) {
         /* If this output should be driven by our "CRTC", set DPMS mode */
@@ -409,7 +408,7 @@ xmir_crtc_destroy(xf86CrtcPtr crtc)
 }
 
 static const xf86CrtcFuncsRec crtc_funcs = {
-    .dpms                = crtc_dpms,
+    .dpms                = xmir_crtc_dpms,
     .set_mode_major      = xmir_crtc_set_mode_major,
     .set_cursor_colors   = crtc_set_cursor_colors,
     .set_cursor_position = crtc_set_cursor_position,
@@ -602,9 +601,9 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
     display_config =
         mir_connection_create_display_config(xmir_connection_get());
 
-    xmir->root_window_fragments = malloc((display_config->num_outputs + 1) *
+    xmir->root_window_fragments = malloc((display_config->cards[0].max_simultaneous_outputs + 1) *
                                          sizeof(xmir_window *));
-    xmir->root_window_fragments[display_config->num_outputs] = NULL;
+    xmir->root_window_fragments[display_config->cards[0].max_simultaneous_outputs] = NULL;
 
     if (xmir->root_window_fragments == NULL)
         return FALSE;
