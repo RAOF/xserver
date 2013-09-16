@@ -232,7 +232,6 @@ static pointer
 xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 {
     static Bool setupDone = FALSE;
-    const char *socket = "/tmp/mir_socket";
     
     if (setupDone) {
         if (errmaj)
@@ -240,11 +239,7 @@ xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
         return NULL;
     }
 
-
-    if (mirSocket != NULL)
-        socket = mirSocket;
-
-    conn = mir_connect_sync(socket, mirID);
+    conn = mir_connect_sync(mirSocket, mirID);
 
     if (!mir_connection_is_valid(conn)) {
         if (errmaj)
