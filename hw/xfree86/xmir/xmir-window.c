@@ -76,13 +76,13 @@ xmir_window_get_fd(xmir_window *xmir_win)
 static void
 xmir_handle_buffer_available(void *ctx)
 {
+    xmir_screen *xmir;
     xmir_window *mir_win = *(xmir_window **)ctx;
 
     if (mir_win->surface == NULL)
         return;
 
-    xmir_screen *xmir =
-        xmir_screen_get(xmir_window_to_windowptr(mir_win)->drawable.pScreen);
+    xmir = xmir_screen_get(xmir_window_to_windowptr(mir_win)->drawable.pScreen);
 
     mir_win->has_free_buffer = TRUE;
     mir_win->damage_index = (mir_win->damage_index + 1) % MIR_MAX_BUFFER_AGE;
@@ -169,9 +169,9 @@ xmir_window_get_dirty(xmir_window *xmir_win)
         return (RegionPtr)&xmir_empty_region;
 
     if (xmir_win->damaged) {
+        int i;
         RegionPtr damage = DamageRegion(xmir_win->damage);
         RegionIntersect(damage, damage, &xmir_win->region);
-        int i;
 
         for (i = 0; i < MIR_MAX_BUFFER_AGE; i++) {
             RegionUnion(&xmir_win->past_damage[i],

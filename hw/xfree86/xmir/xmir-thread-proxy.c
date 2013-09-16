@@ -34,7 +34,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 
+#include "xf86.h"
 #include "xmir-private.h"
 
 struct xmir_marshall_handler {
@@ -55,7 +57,9 @@ xmir_wakeup_handler(pointer data, int err, pointer read_mask)
 void
 xmir_init_thread_to_eventloop(void)
 {
-	pipe(pipefds);
+	int err = pipe(pipefds);
+	if (err == -1)
+		FatalError("[XMIR] Failed to create thread-proxy pipes: %s\n", strerror(errno));
 
 	/* Set the read end to not block; we'll pull from this in the event loop
 	 * We don't need to care about the write end, as that'll be written to
@@ -89,12 +93,15 @@ xmir_register_handler(void (*msg_handler)(void *msg), size_t msg_size)
 void
 xmir_post_to_eventloop(xmir_marshall_handler *handler, void *msg) 
 {
+	ssize_t written;
 	const int total_size = sizeof *handler + handler->msg_size;
 	/* We require the total size to be less than PIPE_BUF to ensure an atomic write */
 	assert(total_size < PIPE_BUF);
 
 	memcpy(handler->msg, msg, handler->msg_size);
-	write(pipefds[1], handler, total_size);
+	written = write(pipefds[1], handler, total_size);
+	if (written != total_size)
+		xf86Msg(X_ERROR, "[XMIR] Failed to proxy message to mainloop\n");
 }
 
 void
