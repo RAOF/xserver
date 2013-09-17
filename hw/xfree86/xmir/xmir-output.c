@@ -50,6 +50,7 @@ static void
 xmir_crtc_dpms(xf86CrtcPtr crtc, int mode)
 {
     xf86CrtcConfigPtr crtc_cfg = XF86_CRTC_CONFIG_PTR(crtc->scrn);
+    struct xmir_crtc *xmir_crtc = crtc->driver_private;
 
     for (int i = 0; i < crtc_cfg->num_output; i++) {
         /* If this output should be driven by our "CRTC", set DPMS mode */
@@ -72,6 +73,8 @@ xmir_crtc_dpms(xf86CrtcPtr crtc, int mode)
             }
         }
     }
+    mir_wait_for(mir_connection_apply_display_config(xmir_connection_get(),
+                                                     xmir_crtc->config));
 }
 
 static const char*
