@@ -46,6 +46,24 @@ struct xmir_crtc {
     MirDisplayConfiguration *config;
 };
 
+static const char *
+xmir_mir_dpms_mode_description(MirPowerMode mode)
+{
+    switch (mode)
+    {
+    case mir_power_mode_on:
+        return "mir_power_mode_on";
+    case mir_power_mode_standby:
+        return "mir_power_mode_standby";
+    case mir_power_mode_suspend:
+        return "mir_power_mode_suspend";
+    case mir_power_mode_off:
+        return "mir_power_mode_off";
+    default:
+        return "OMGUNKNOWN!";
+    }
+}
+
 static void
 xmir_crtc_dpms(xf86CrtcPtr crtc, int mode)
 {
@@ -218,7 +236,7 @@ xmir_dump_config(MirDisplayConfiguration *config)
 {
   for (int i = 0; i < config->num_outputs; i++)
     {
-      xf86Msg(X_INFO, "Output %d (%s, %s) has mode %d (%d x %d @ %.2f), position (%d,%d)\n",
+      xf86Msg(X_INFO, "Output %d (%s, %s) has mode %d (%d x %d @ %.2f), position (%d,%d), dpms: %s\n",
 	      config->outputs[i].output_id,
 	      config->outputs[i].connected ? "connected" : "disconnected",
 	      config->outputs[i].used ? "enabled" : "disabled",
@@ -227,7 +245,8 @@ xmir_dump_config(MirDisplayConfiguration *config)
           config->outputs[i].used ? config->outputs[i].modes[config->outputs[i].current_mode].vertical_resolution : 0,
           config->outputs[i].used ? config->outputs[i].modes[config->outputs[i].current_mode].refresh_rate : 0,
 	      config->outputs[i].position_x,
-	      config->outputs[i].position_y);
+	      config->outputs[i].position_y,
+          xmir_mir_dpms_mode_description(config->outputs[i].power_mode));
       for (int m = 0; m < config->outputs[i].num_modes; m++)
       {
         xf86Msg(X_INFO, "  mode %d: (%d x %d @ %.2f)\n",
@@ -261,6 +280,8 @@ xmir_update_config(xf86CrtcConfigPtr crtc_cfg)
         /* TODO: Ensure that the order actually matches up */
         xmir_output_populate(crtc_cfg->output[i], new_config->outputs + i);
     }
+    xf86Msg(X_INFO, "Recieved updated config from Mir:\n");
+    xmir_dump_config(new_config);
 }
 
 static void
@@ -320,10 +341,8 @@ xmir_crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
         /* TODO: Restore correct config cache */
     }
 
-    xmir_update_config(XF86_CRTC_CONFIG_PTR(crtc->scrn));
-
     xf86Msg(X_INFO, "Post-modeset config:\n");
-    xmir_dump_config(xmir_crtc->config);
+    xmir_update_config(XF86_CRTC_CONFIG_PTR(crtc->scrn));
 
     if (output_id == mir_display_output_id_invalid) {
       if (xmir_crtc->root_fragment->surface != NULL)
