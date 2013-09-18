@@ -33,7 +33,6 @@
 #ifndef _XMIR_PRIVATE_H
 #define _XMIR_PRIVATE_H
 
-#include <atomic_ops.h>
 #include <mir_toolkit/mir_client_library.h>
 #include "xmir.h"
 #include "xf86str.h"
@@ -53,7 +52,6 @@ struct xmir_screen {
     xmir_marshall_handler *submit_rendering_handler;
     xmir_marshall_handler *hotplug_event_handler;
     xmir_marshall_handler *focus_event_handler;
-    AO_t                   focus_count;
     struct xorg_list       damage_list;
     struct xmir_window   **root_window_fragments; /* NULL terminated array of xmir_window * */
 };
