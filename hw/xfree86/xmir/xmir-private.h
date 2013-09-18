@@ -54,6 +54,7 @@ struct xmir_screen {
     xmir_marshall_handler *focus_event_handler;
     struct xorg_list       damage_list;
     struct xmir_window   **root_window_fragments; /* NULL terminated array of xmir_window * */
+    unsigned int           dpms_on:1;             /* Until Mir is less stupid about DPMS */
 };
 
 struct xmir_window {

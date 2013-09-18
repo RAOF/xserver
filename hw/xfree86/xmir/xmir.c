@@ -110,6 +110,7 @@ xmir_screen_create(ScrnInfoPtr scrn)
         return NULL;
 
     xmir->scrn = scrn;
+    xmir->dpms_on = TRUE;
 
     return xmir;
 }

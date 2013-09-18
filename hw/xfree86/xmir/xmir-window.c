@@ -141,6 +141,9 @@ xmir_submit_rendering_for_window(xmir_window *xmir_win,
 {
     RegionPtr tracking;
 
+    if (!xmir_screen_get(xmir_win->win->drawable.pScreen)->dpms_on)
+        return Success;
+
     xmir_win->has_free_buffer = FALSE;
     tracking = damage_region_for_current_buffer(xmir_win);
     mir_surface_swap_buffers(xmir_win->surface, &handle_buffer_received, xmir_win);

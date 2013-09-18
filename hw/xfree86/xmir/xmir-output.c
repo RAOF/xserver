@@ -78,15 +78,19 @@ xmir_crtc_dpms(xf86CrtcPtr crtc, int mode)
             switch (mode) {
             case DPMSModeOn:
                 output->power_mode = mir_power_mode_on;
+                xmir_crtc->xmir->dpms_on = TRUE;
                 break;
             case DPMSModeStandby:
                 output->power_mode = mir_power_mode_standby;
+                xmir_crtc->xmir->dpms_on = FALSE;
                 break;
             case DPMSModeSuspend:
                 output->power_mode = mir_power_mode_suspend;
+                xmir_crtc->xmir->dpms_on = FALSE;
                 break;
             case DPMSModeOff:
                 output->power_mode = mir_power_mode_off;
+                xmir_crtc->xmir->dpms_on = FALSE;
                 break;
             }
         }
