@@ -1,4 +1,4 @@
-xorg-server (2:1.14.2.901-2ubuntu5) UNRELEASED; urgency=low
+xorg-server (2:1.14.2.901-2ubuntu5) saucy; urgency=low
 
   * xmir.patch: Drop input on loss of focus. Fixes "I'm sending all my
     passwords to IRC when I switch to a VT" with associated 
