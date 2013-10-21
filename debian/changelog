@@ -1,3 +1,9 @@
+xorg-server (2:1.12.4-6+deb7u1) stable-security; urgency=low
+
+  * CVE-2013-4396
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Mon, 21 Oct 2013 16:43:03 +0000
+
 xorg-server (2:1.12.4-6) unstable; urgency=low
 
   * Touch: Fix duplicate TouchBegin selection with virtual devices
