@@ -1,3 +1,9 @@
+xorg-server (2:1.7.7-17) squeeze-security; urgency=low
+
+  * CVE-2013-4396
+
+ -- Moritz Muehlenhoff <jmm@debian.org>  Tue, 22 Oct 2013 00:13:44 +0000
+
 xorg-server (2:1.7.7-16) squeeze-security; urgency=high
 
   * xfree86: fix flush input to work with Linux evdev devices.  Avoids
