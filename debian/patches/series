@@ -11,3 +11,4 @@
 08_xfree86_fix_ia64_inx_outx.diff
 09_EXA-Track-source-mask-pixmaps-more-explicitly-for-Co.diff
 14_CVE-2013-4396.diff
+15_CVE-2013-6424.diff

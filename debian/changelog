@@ -1,3 +1,10 @@
+xorg-server (2:1.12.4-6+deb7u2) wheezy-security; urgency=high
+
+  * exa: only draw valid trapezoids
+    Addresses CVE-2013-6424
+
+ -- Julien Cristau <jcristau@debian.org>  Tue, 17 Dec 2013 20:34:10 +0100
+
 xorg-server (2:1.12.4-6+deb7u1) stable-security; urgency=low
 
   * CVE-2013-4396
