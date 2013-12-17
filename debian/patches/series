@@ -23,3 +23,4 @@
 22-stop-searching-for-xf86config-files
 23-xf86-fix-flush-input-to-work-with-Linux-evdev-device.diff
 24-CVE-2013-4396.diff
+25-CVE-2013-6424.diff

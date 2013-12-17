@@ -1,3 +1,10 @@
+xorg-server (2:1.7.7-18) squeeze-security; urgency=high
+
+  * exa: only draw valid trapezoids
+    Addresses CVE-2013-6424
+
+ -- Julien Cristau <jcristau@debian.org>  Tue, 17 Dec 2013 20:21:57 +0100
+
 xorg-server (2:1.7.7-17) squeeze-security; urgency=low
 
   * CVE-2013-4396
