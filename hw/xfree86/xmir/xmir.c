@@ -132,13 +132,15 @@ static void xmir_handle_focus_event(void *ctx)
     Bool new_focus = *(Bool *)ctx;
     xf86Msg(X_INFO, "[XMir] Handling focus event, new_focus = %s\n", new_focus ? "TRUE" : "FALSE");
 
-    /* TODO: Split xf86VTSwitch out so that we don't need to check xf86VTOwner*/
     /* TODO: Disable input on startup until we receive a usc ACK */
-    if (new_focus && !xf86VTOwner())
-        xf86VTSwitch();
-
-    if (!new_focus && xf86VTOwner())
-        xf86VTSwitch();
+    if (new_focus) {
+        for (pInfo = xf86InputDevs; pInfo; pInfo = pInfo->next)
+            xf86EnableInputDeviceForVTSwitch(pInfo);
+    }
+    else {
+        for (pInfo = xf86InputDevs; pInfo; pInfo = pInfo->next)
+            xf86DisableInputDeviceForVTSwitch(pInfo);
+    }
 }
 
 static void xmir_handle_lifecycle_event(MirConnection *unused, MirLifecycleState state, void *ctx)

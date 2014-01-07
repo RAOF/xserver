@@ -614,6 +614,10 @@ xf86VTSwitch(void)
 {
     DebugF("xf86VTSwitch()\n");
 
+    /* Host Mir server handles VTs for XMir */
+    if (xorgMir)
+        return;
+
 #ifdef XFreeXDGA
     if (!DGAVTSwitch())
         return;

@@ -93,6 +93,9 @@ extern _X_EXPORT int xf86Verbose;       /* verbosity level */
 extern _X_EXPORT int xf86LogVerbose;    /* log file verbosity level */
 extern _X_EXPORT Bool xorgHWAccess;
 extern _X_EXPORT Bool xorgMir;
+extern _X_EXPORT const char *mirID;
+extern _X_EXPORT const char *mirSocket;
+
 
 extern _X_EXPORT RootWinPropPtr *xf86RegisteredPropertiesTable;
 
@@ -149,6 +152,9 @@ xf86HandlePMEvents(int fd, void *data);
 extern _X_EXPORT int (*xf86PMGetEventFromOs) (int fd, pmEvent * events,
                                               int num);
 extern _X_EXPORT pmWait (*xf86PMConfirmEventToOs) (int fd, pmEvent event);
+extern _X_EXPORT void
+xf86VTSwitch(void);
+
 
 /* xf86Helper.c */
 extern _X_EXPORT void

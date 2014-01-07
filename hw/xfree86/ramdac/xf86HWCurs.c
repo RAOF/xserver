@@ -114,8 +114,6 @@ xf86InitHardwareCursor(ScreenPtr pScreen, xf86CursorInfoPtr infoPtr)
         infoPtr->RealizeCursor = RealizeCursorInterleave0;
     }
 
-    infoPtr->pScrn = xf86ScreenToScrn(pScreen);
-
     return TRUE;
 }
 
