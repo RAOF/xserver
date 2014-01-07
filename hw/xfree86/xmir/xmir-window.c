@@ -259,7 +259,7 @@ void
 xmir_window_disable_damage_tracking(xmir_window *xmir_win)
 {
     if (xmir_win->damage != NULL) {
-        DamageUnregister(&xmir_win->win->drawable, xmir_win->damage);
+        DamageUnregister(xmir_win->damage);
         DamageDestroy(xmir_win->damage);
         xmir_win->damage = NULL;
     }
