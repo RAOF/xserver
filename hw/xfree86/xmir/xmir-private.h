@@ -33,33 +33,57 @@
 #ifndef _XMIR_PRIVATE_H
 #define _XMIR_PRIVATE_H
 
-#include <mir_client_library.h>
+#include <mir_toolkit/mir_client_library.h>
 #include "xmir.h"
 #include "xf86str.h"
 #include "list.h"
 #include "scrnintstr.h"
+#include "regionstr.h"
+
+#define MIR_MAX_BUFFER_AGE 3
 
 typedef struct xmir_marshall_handler xmir_marshall_handler;
 
 struct xmir_screen {
-    MirConnection *		   conn;
+    ScrnInfoPtr            scrn;
     CreateWindowProcPtr    CreateWindow;
+    DestroyWindowProcPtr   DestroyWindow;
     xmir_driver *          driver;
     xmir_marshall_handler *submit_rendering_handler;
+    xmir_marshall_handler *hotplug_event_handler;
+    xmir_marshall_handler *focus_event_handler;
     struct xorg_list       damage_list;
+    struct xmir_window   **root_window_fragments; /* NULL terminated array of xmir_window * */
+    unsigned int           dpms_on:1;             /* Until Mir is less stupid about DPMS */
 };
 
-typedef struct {
+struct xmir_window {
     WindowPtr           win;
     MirSurface         *surface;
+    RegionRec           region;
+    RegionRec           past_damage[MIR_MAX_BUFFER_AGE];
     DamagePtr           damage;
+    int                 damage_index;
     struct xorg_list    link_damage;
-    Bool                has_free_buffer;
-} xmir_window;
+    unsigned int        has_free_buffer:1;
+    unsigned int        damaged:1;
+};
 
+MirConnection *
+xmir_connection_get(void);
 
 xmir_screen *
 xmir_screen_get(ScreenPtr screen);
+
+xmir_window *
+xmir_window_get(WindowPtr win);
+
+void
+xmir_window_enable_damage_tracking(xmir_window *xmir_win);
+
+void
+xmir_window_disable_damage_tracking(xmir_window *xmir_win);
+
 
 Bool
 xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir);

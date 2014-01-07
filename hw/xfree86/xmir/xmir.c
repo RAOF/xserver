@@ -39,26 +39,49 @@
 
 #include "list.h"
 #include "xf86.h"
+#include "xf86Crtc.h"
+#include "xf86Priv.h"
 
-#include <mir_client_library.h>
-#include <mir_client_library_drm.h>
+#include <xf86drm.h>
+#include <string.h>
+
+#include <mir_toolkit/mir_client_library.h>
+#include <mir_toolkit/mir_client_library_drm.h>
 
 static DevPrivateKeyRec xmir_screen_private_key;
+/* 
+ * We have only a single Mir connection, regardless of how many
+ * drivers load.
+ */
+static MirConnection *conn;
+
+MirConnection *
+xmir_connection_get(void)
+{
+    return conn;
+}
 
 xmir_screen *
 xmir_screen_get(ScreenPtr screen)
 {
-    return dixLookupPrivate(&screen->devPrivates, &xmir_screen_private_key);
+    return dixGetPrivate(&screen->devPrivates, &xmir_screen_private_key);
 }
 
 _X_EXPORT int
-xmir_get_drm_fd(xmir_screen *screen)
+xmir_get_drm_fd(const char *busid)
 {
     MirPlatformPackage platform;
+    int i, fd = -1;
 
-    mir_connection_get_platform(screen->conn, &platform);
-    assert(platform.fd_items == 1);
-    return platform.fd[0];
+    mir_connection_get_platform(conn, &platform);
+
+    for (i = 0; i < platform.fd_items; ++i) {
+        char *fd_busid = drmGetBusid(platform.fd[i]);
+        if (!strcasecmp(busid, fd_busid))
+            fd = platform.fd[i];
+        drmFreeBusid(fd_busid);
+    }
+    return fd;
 }
 
 static void
@@ -72,18 +95,11 @@ _X_EXPORT int
 xmir_auth_drm_magic(xmir_screen *xmir, uint32_t magic)
 {
     int status;
-    mir_wait_for(mir_connection_drm_auth_magic(xmir->conn,
+    mir_wait_for(mir_connection_drm_auth_magic(xmir_connection_get(),
                                                magic,
                                                &handle_auth_magic,
                                                &status));
     return status;
-}
-
-static void
-handle_connection(MirConnection *connection, void *ctx)
-{
-    xmir_screen *xmir = ctx;
-    xmir->conn = connection;
 }
 
 _X_EXPORT xmir_screen *
@@ -93,22 +109,10 @@ xmir_screen_create(ScrnInfoPtr scrn)
     if (xmir == NULL)
         return NULL;
 
-    mir_wait_for(mir_connect("/tmp/mir_socket",
-                             "OMG XSERVER",
-                             handle_connection, xmir));
-
-    if (!mir_connection_is_valid(xmir->conn)) {
-        xf86Msg(X_ERROR,
-                "Failed to connect to Mir: %s\n",
-                mir_connection_get_error_message(xmir->conn));
-        goto error;
-    }
+    xmir->scrn = scrn;
+    xmir->dpms_on = TRUE;
 
     return xmir;
-error:
-    if (xmir)
-        free(xmir);
-    return NULL;
 }
 
 _X_EXPORT Bool
@@ -123,6 +127,40 @@ xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver)
     return TRUE;
 }
 
+static void xmir_handle_focus_event(void *ctx)
+{
+    Bool new_focus = *(Bool *)ctx;
+    xf86Msg(X_INFO, "[XMir] Handling focus event, new_focus = %s\n", new_focus ? "TRUE" : "FALSE");
+
+    /* TODO: Split xf86VTSwitch out so that we don't need to check xf86VTOwner*/
+    /* TODO: Disable input on startup until we receive a usc ACK */
+    if (new_focus && !xf86VTOwner())
+        xf86VTSwitch();
+
+    if (!new_focus && xf86VTOwner())
+        xf86VTSwitch();
+}
+
+static void xmir_handle_lifecycle_event(MirConnection *unused, MirLifecycleState state, void *ctx)
+{
+    (void)unused;
+    xmir_screen *xmir = ctx;
+    Bool new_focus;
+    switch(state)
+    {
+    case mir_lifecycle_state_will_suspend:
+        new_focus = FALSE;
+        break;
+    case mir_lifecycle_state_resumed:
+        new_focus = TRUE;
+        break;
+    default:
+        xf86Msg(X_ERROR, "Received unknown Mir lifetime event\n");
+        return;
+    }
+    xmir_post_to_eventloop(xmir->focus_event_handler, &new_focus);
+}
+
 _X_EXPORT Bool
 xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
 {
@@ -133,17 +171,43 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
     if (!xmir_screen_init_window(screen, xmir))
         return FALSE;
 
+    if (!xf86_cursors_init(screen, 0,0,0))
+        xf86Msg(X_WARNING, "xf86Cursor initialisation failed\n");
+
+    /* Hook up focus -> VT switch proxy */
+    xmir->focus_event_handler = 
+        xmir_register_handler(&xmir_handle_focus_event,
+                              sizeof(Bool));
+    if (xmir->focus_event_handler == NULL)
+        return FALSE;
+
+    mir_connection_set_lifecycle_event_callback(xmir_connection_get(),
+                                                &xmir_handle_lifecycle_event,
+                                                xmir);
+
     return TRUE;
 }
 
 _X_EXPORT void
-xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage_proc callback)
+xmir_screen_close(ScreenPtr screen, xmir_screen *xmir)
+{
+
+}
+
+_X_EXPORT void
+xmir_screen_destroy(xmir_screen *xmir)
+{
+    
+}
+
+_X_EXPORT void
+xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback)
 {
     xmir_window *xmir_win, *tmp_win;
     xorg_list_for_each_entry_safe(xmir_win, tmp_win, &xmir->damage_list, link_damage) {
-        (*callback)(xmir_win->win, xmir_win->damage);
-        if(!xmir_window_is_dirty(xmir_win->win))
-            xorg_list_del(&xmir_win->link_damage);
+        if (xmir_window_has_free_buffer(xmir_win) &&
+            xmir_window_is_dirty(xmir_win))
+            (*callback)(xmir_win, xmir_window_get_dirty(xmir_win));
     }
 }
 
@@ -173,6 +237,16 @@ xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
     if (setupDone) {
         if (errmaj)
             *errmaj = LDR_ONCEONLY;
+        return NULL;
+    }
+
+    conn = mir_connect_sync(mirSocket, mirID);
+
+    if (!mir_connection_is_valid(conn)) {
+        if (errmaj)
+            *errmaj = LDR_MODSPECIFIC;
+        FatalError("Failed to connect to Mir: %s\n",
+                   mir_connection_get_error_message(conn));
         return NULL;
     }
 
