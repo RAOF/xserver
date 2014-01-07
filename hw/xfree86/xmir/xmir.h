@@ -34,29 +34,25 @@
 #define _XMIR_H
 
 #include <stdint.h>
-#include <mir_client_library.h>
+#include <mir_toolkit/mir_client_library.h>
 
 #include "xf86str.h"
 #include "scrnintstr.h"
 #include "window.h"
 
-typedef void (*xmir_buffer_available_proc)(WindowPtr win);
-
 typedef struct xmir_screen xmir_screen;
+typedef struct xmir_window xmir_window;
+
+typedef void (*xmir_window_proc)(xmir_window *xmir_win, RegionPtr damaged_region);
 
 #define XMIR_DRIVER_VERSION 1
 typedef struct {
     int version;
-    xmir_buffer_available_proc BufferAvailableForWindow;
+    xmir_window_proc BufferAvailableForWindow;
 } xmir_driver;
 
-typedef struct {
-    uint32_t name;
-    uint32_t stride;
-} xmir_buffer_info;
-
 _X_EXPORT int
-xmir_get_drm_fd(xmir_screen *screen);
+xmir_get_drm_fd(const char *busid);
 
 _X_EXPORT int
 xmir_auth_drm_magic(xmir_screen *xmir, uint32_t magic);
@@ -70,22 +66,38 @@ xmir_screen_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir, xmir_driver *driver);
 _X_EXPORT Bool
 xmir_screen_init(ScreenPtr screen, xmir_screen *xmir);
 
-_X_EXPORT Bool
-xmir_populate_buffers_for_window(WindowPtr win, xmir_buffer_info *buf);
+_X_EXPORT void
+xmir_screen_close(ScreenPtr screen, xmir_screen *xmir);
+	
+_X_EXPORT void
+xmir_screen_destroy(xmir_screen *xmir);
+
+_X_EXPORT WindowPtr
+xmir_window_to_windowptr(xmir_window *xmir_win);
 
 _X_EXPORT int
-xmir_submit_rendering_for_window(WindowPtr win,
+xmir_window_get_fd(xmir_window *xmir_win);
+
+_X_EXPORT int
+xmir_submit_rendering_for_window(xmir_window *xmir_win,
                                  RegionPtr region);
 
 _X_EXPORT Bool
-xmir_window_has_free_buffer(WindowPtr win);
+xmir_window_has_free_buffer(xmir_window *xmir_win);
+
+_X_EXPORT RegionPtr
+xmir_window_get_dirty(xmir_window *xmir_win);
 
 _X_EXPORT Bool
-xmir_window_is_dirty(WindowPtr win);
+xmir_window_is_dirty(xmir_window *xmir_win);
 
-typedef void (*xmir_handle_window_damage_proc)(WindowPtr win, DamagePtr damage);
+_X_EXPORT BoxPtr
+xmir_window_get_drawable_region(xmir_window *xmir_win);
+
+_X_EXPORT int32_t
+xmir_window_get_stride(xmir_window *xmir_win);
 
 _X_EXPORT void
-xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_handle_window_damage_proc callback);
+xmir_screen_for_each_damaged_window(xmir_screen *xmir, xmir_window_proc callback);
 
 #endif /* _XMIR_H */
