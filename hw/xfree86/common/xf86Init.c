@@ -1494,10 +1494,6 @@ ddxProcessArgument(int argc, char **argv, int i)
         return 1;
     }
     if (!strcmp(argv[i], "-mir")) {
-        xorgMir = TRUE;
-        return 1;
-    }
-    if (!strcmp(argv[i], "-mir")) {
         CHECK_FOR_REQUIRED_ARGUMENT();
         mirID = argv[++i];
         xorgMir = TRUE;
