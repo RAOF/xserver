@@ -1,11 +1,12 @@
-xorg-server (2:1.15.1-1) UNRELEASED; urgency=low
+xorg-server (2:1.15.1-1) unstable; urgency=low
 
+  [ Maarten Lankhorst ]
   * New upstream release.
     + Xephyr: restore initial window resize lost in xcb conversion
       (closes: #742028)
     + glx: Clear new FBConfig attributes to 0 by default (closes: #743180)
 
- -- Maarten Lankhorst <maarten.lankhorst@ubuntu.com>  Mon, 14 Apr 2014 12:52:18 +0200
+ -- Julien Cristau <jcristau@debian.org>  Tue, 15 Apr 2014 20:49:32 +0200
 
 xorg-server (2:1.15.0.901-1) unstable; urgency=medium
 
