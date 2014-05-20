@@ -49,12 +49,18 @@ struct xmir_screen {
     CreateWindowProcPtr    CreateWindow;
     DestroyWindowProcPtr   DestroyWindow;
     xmir_driver *          driver;
+
     xmir_marshall_handler *submit_rendering_handler;
     xmir_marshall_handler *hotplug_event_handler;
     xmir_marshall_handler *focus_event_handler;
+    xmir_marshall_handler *input_handler;
+
     struct xorg_list       damage_list;
     struct xmir_window   **root_window_fragments; /* NULL terminated array of xmir_window * */
     unsigned int           dpms_on:1;             /* Until Mir is less stupid about DPMS */
+
+    DeviceIntPtr           keyboard;
+    DeviceIntPtr           pointer;
 };
 
 struct xmir_window {
