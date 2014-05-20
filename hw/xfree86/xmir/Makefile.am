@@ -20,7 +20,9 @@ libxmir_la_SOURCES = \
 	xmir-window.c \
 	xmir-output.c \
 	xmir-thread-proxy.c \
+	xmir-input.c \
 	xmir.h \
-	xmir-private.h
+	xmir-private.h \
+	xmir-input.h
 
 sdk_HEADERS = xmir.h

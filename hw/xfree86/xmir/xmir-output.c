@@ -37,6 +37,7 @@
 #include <xorg-config.h>
 #include "xmir.h"
 #include "xmir-private.h"
+#include "xmir-input.h"
 #include "xf86Crtc.h"
 #include "xf86Priv.h"
 
@@ -293,11 +294,17 @@ xmir_crtc_surface_created(MirSurface *surface, void *ctx)
 {
     xf86CrtcPtr crtc = ctx;
     struct xmir_crtc *xmir_crtc = crtc->driver_private;
+    MirEventDelegate delegate = {
+        xmir_surface_handle_event,
+        xmir_crtc->xmir
+    };
 
     if (xmir_crtc->root_fragment->surface != NULL)
         mir_surface_release(xmir_crtc->root_fragment->surface, xmir_stupid_callback, NULL);
 
     xmir_crtc->root_fragment->surface = surface;
+
+    mir_surface_set_event_handler(surface, &delegate);
 }
 
 static Bool

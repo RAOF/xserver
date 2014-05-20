@@ -36,6 +36,7 @@
 
 #include "xmir.h"
 #include "xmir-private.h"
+#include "xmir-input.h"
 
 #include "list.h"
 #include "xf86.h"
@@ -44,6 +45,7 @@
 
 #include <xf86drm.h>
 #include <string.h>
+#include <xkbsrv.h>
 
 #include <mir_toolkit/mir_client_library.h>
 #include <mir_toolkit/mir_client_library_drm.h>
@@ -184,6 +186,11 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
     mir_connection_set_lifecycle_event_callback(xmir_connection_get(),
                                                 &xmir_handle_lifecycle_event,
                                                 xmir);
+
+    // TODO: Does not seem right that we have to call this
+    XkbInitPrivates();
+
+    xmir_create_input_devices(xmir);
 
     return TRUE;
 }
