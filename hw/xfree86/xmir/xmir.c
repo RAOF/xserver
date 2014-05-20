@@ -134,12 +134,10 @@ static void xmir_handle_focus_event(void *ctx)
 
     /* TODO: Disable input on startup until we receive a usc ACK */
     if (new_focus) {
-        for (pInfo = xf86InputDevs; pInfo; pInfo = pInfo->next)
-            xf86EnableInputDeviceForVTSwitch(pInfo);
+        xf86VTEnter();
     }
     else {
-        for (pInfo = xf86InputDevs; pInfo; pInfo = pInfo->next)
-            xf86DisableInputDeviceForVTSwitch(pInfo);
+        xf86VTLeave();
     }
 }
 
@@ -231,8 +229,8 @@ static XF86ModuleVersionInfo VersRec = {
 
 _X_EXPORT XF86ModuleData xmirModuleData = { &VersRec, xMirSetup, xMirTeardown };
 
-static pointer
-xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
+static void*
+xMirSetup(void* module, void* opts, int *errmaj, int *errmin)
 {
     static Bool setupDone = FALSE;
     
@@ -260,6 +258,6 @@ xMirSetup(pointer module, pointer opts, int *errmaj, int *errmin)
 }
 
 static void
-xMirTeardown(pointer module)
+xMirTeardown(void* module)
 {
 }

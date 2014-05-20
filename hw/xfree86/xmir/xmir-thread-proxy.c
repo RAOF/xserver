@@ -48,7 +48,7 @@ struct xmir_marshall_handler {
 static int pipefds[2];
 
 static void
-xmir_wakeup_handler(pointer data, int err, pointer read_mask)
+xmir_wakeup_handler(void* data, int err, void* read_mask)
 {
     if (err >= 0 && FD_ISSET(pipefds[0], (fd_set *)read_mask))
         xmir_process_from_eventloop();
