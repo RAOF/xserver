@@ -152,8 +152,6 @@ xf86HandlePMEvents(int fd, void *data);
 extern _X_EXPORT int (*xf86PMGetEventFromOs) (int fd, pmEvent * events,
                                               int num);
 extern _X_EXPORT pmWait (*xf86PMConfirmEventToOs) (int fd, pmEvent event);
-extern _X_EXPORT void
-xf86VTSwitch(void);
 
 
 /* xf86Helper.c */

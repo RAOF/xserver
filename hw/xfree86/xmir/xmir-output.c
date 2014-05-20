@@ -507,7 +507,7 @@ struct xmir_visit_set_pixmap_window {
 };
 
 static int
-xmir_visit_set_window_pixmap(WindowPtr window, pointer data)
+xmir_visit_set_window_pixmap(WindowPtr window, void* data)
 {
     struct xmir_visit_set_pixmap_window *visit = data;
 
