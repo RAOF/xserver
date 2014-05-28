@@ -46,14 +46,15 @@ typedef struct xmir_marshall_handler xmir_marshall_handler;
 
 struct xmir_screen {
     ScrnInfoPtr            scrn;
-    CreateWindowProcPtr    CreateWindow;
-    DestroyWindowProcPtr   DestroyWindow;
+    RealizeWindowProcPtr   RealizeWindow;
+    UnrealizeWindowProcPtr UnrealizeWindow;
     xmir_driver *          driver;
 
     xmir_marshall_handler *submit_rendering_handler;
     xmir_marshall_handler *hotplug_event_handler;
     xmir_marshall_handler *focus_event_handler;
     xmir_marshall_handler *input_handler;
+    xmir_marshall_handler *delayed_init_handler;
 
     struct xorg_list       damage_list;
     struct xmir_window   **root_window_fragments; /* NULL terminated array of xmir_window * */
