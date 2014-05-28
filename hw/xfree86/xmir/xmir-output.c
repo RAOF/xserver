@@ -440,9 +440,21 @@ xmir_crtc_destroy(xf86CrtcPtr crtc)
     free(xmir_crtc);
 }
 
+static Bool
+crtc_set_mode_major(xf86CrtcPtr crtc, DisplayModePtr mode,
+                    Rotation rotation, int x, int y)
+{
+    return TRUE;
+}
+
+static void
+null_crtc_dpms(xf86CrtcPtr crtc, int mode)
+{
+}
+
 static const xf86CrtcFuncsRec crtc_funcs = {
-    .dpms                = xmir_crtc_dpms,
-    .set_mode_major      = xmir_crtc_set_mode_major,
+    .dpms                = null_crtc_dpms,
+    .set_mode_major      = crtc_set_mode_major,
     .set_cursor_colors   = crtc_set_cursor_colors,
     .set_cursor_position = crtc_set_cursor_position,
     .show_cursor         = crtc_show_cursor,
@@ -558,7 +570,7 @@ xmir_resize(ScrnInfoPtr scrn, int width, int height)
     scrn->virtualX = width;
     scrn->virtualY = height;
     scrn->displayWidth = width;
-
+/*
     for (int i = 0; i < crtc_cfg->num_crtc; i++) {
         xf86CrtcPtr crtc = crtc_cfg->crtc[i];
 
@@ -568,7 +580,7 @@ xmir_resize(ScrnInfoPtr scrn, int width, int height)
         xmir_crtc_set_mode_major(crtc, &crtc->mode,
                                  crtc->rotation, crtc->x, crtc->y);
     }
-
+*/
     xmir_set_screen_pixmap(old_screen_pixmap, new_screen_pixmap);
     screen->DestroyPixmap(old_screen_pixmap);
 
@@ -633,14 +645,14 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
 
     display_config =
         mir_connection_create_display_config(xmir_connection_get());
-
+/*
     xmir->root_window_fragments = malloc((display_config->cards[0].max_simultaneous_outputs + 1) *
                                          sizeof(xmir_window *));
     xmir->root_window_fragments[display_config->cards[0].max_simultaneous_outputs] = NULL;
 
     if (xmir->root_window_fragments == NULL)
         return FALSE;
-
+*/
     for (i = 0; i < display_config->num_outputs; i++) {
         xf86OutputPtr xf86output;
         char name[32];
@@ -663,14 +675,14 @@ xmir_mode_pre_init(ScrnInfoPtr scrn, xmir_screen *xmir)
             return FALSE;
 
         xmir_crtc->xmir = xmir;
-        xmir_crtc->root_fragment = calloc(1, sizeof *xmir_crtc->root_fragment);
+//        xmir_crtc->root_fragment = calloc(1, sizeof *xmir_crtc->root_fragment);
         xmir_crtc->config = display_config;
 
         if (xmir_crtc->root_fragment == NULL)
             return FALSE;
 
-        xmir->root_window_fragments[i] = xmir_crtc->root_fragment;
-        RegionNull(&xmir_crtc->root_fragment->region);
+//        xmir->root_window_fragments[i] = xmir_crtc->root_fragment;
+//        RegionNull(&xmir_crtc->root_fragment->region);
 
         xf86crtc = xf86CrtcCreate(scrn, &crtc_funcs);
         xf86crtc->driver_private = xmir_crtc;

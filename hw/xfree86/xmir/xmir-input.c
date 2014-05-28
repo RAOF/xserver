@@ -30,6 +30,9 @@
  *   Robert Carr <robert.carr@canonical.com>
  */
 
+#include <xorg-config.h>
+#include <X11/extensions/XI2proto.h>
+
 #include "xmir.h"
 #include "xmir-private.h"
 #include "xmir-input.h"
@@ -123,11 +126,7 @@ xmir_keyboard_proc(DeviceIntPtr device, int what)
     case DEVICE_INIT:
 	device->public.on = FALSE;
 
-        rmlvo.rules = "evdev";
-        rmlvo.model = "evdev";
-        rmlvo.layout = "us";
-        rmlvo.variant = NULL;
-        rmlvo.options = NULL;
+    XkbInitRules(&rmlvo, "evdev", "pc104", "us", "dvorak", NULL);
 
         // TODO: Mir already does XKB mapping so it seems strange to replicate it here...
         // requires investigation
@@ -161,19 +160,25 @@ xmir_create_input_device(xmir_screen *xmir, const char *driver, DeviceProc devic
 
     if (type_atom == None)
         type_atom = MakeAtom(driver, strlen(driver), TRUE);
+
     snprintf(name, sizeof name, "%s:%d", driver, 0); // TODO: ID
     AssignTypeAndName(dev, type_atom, name);
+
     dev->public.devicePrivate = xmir;
     dev->type = SLAVE;
-    dev->spriteInfo = NULL;
+    dev->spriteInfo->spriteOwner = FALSE;
 
     LogMessage(X_INFO, "config/xmir: Adding input device %s\n", driver);
+
+    ActivateDevice(dev, FALSE);
+    EnableDevice(dev, FALSE);
 
     return dev;
 }
 
-void xmir_window_handle_key_event(xmir_screen *xmir,
-                                  MirKeyEvent const* kev)
+static void 
+xmir_window_handle_key_event(xmir_screen *xmir,
+                             MirKeyEvent const* kev)
 {
     // TODO: Ideally we would be using the keycode, already mapped by mir...
     int32_t scan_code = kev->scan_code + 8; // X scan codes differ by 8 from linux/input.h scancodes.
@@ -182,12 +187,13 @@ void xmir_window_handle_key_event(xmir_screen *xmir,
     valuator_mask_zero(&mask);
 
     QueueKeyboardEvents(xmir->keyboard,
-                        kev->action == mir_key_action_down ? KeyRelease : KeyPress,
+                        kev->action == mir_key_action_up ? KeyRelease : KeyPress,
                         scan_code, &mask);
 }
 
-void xmir_window_handle_motion_event(xmir_screen *xmir,
-                                     MirMotionEvent const* mev)
+static void
+xmir_window_handle_motion_event(xmir_screen *xmir,
+                                MirMotionEvent const* mev)
 {
     // FIXME: https://bugs.launchpad.net/mir/+bug/1197108
     switch (mev->action)

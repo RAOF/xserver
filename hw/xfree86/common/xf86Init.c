@@ -1579,6 +1579,8 @@ ddxUseMsg(void)
     ErrorF("-sharevts              share VTs with another X server\n");
     ErrorF
         ("-mir MirID             run nested in a Mir compositor with app id MirID\n");
+    ErrorF
+        ("-mirSocket socket      connect to Mir server on socket\n");
     /* OS-specific usage */
     xf86UseMsg();
     ErrorF("\n");

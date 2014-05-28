@@ -163,6 +163,13 @@ static void xmir_handle_lifecycle_event(MirConnection *unused, MirLifecycleState
     xmir_post_to_eventloop(xmir->focus_event_handler, &new_focus);
 }
 
+static void
+xmir_delayed_init(void *ctx)
+{
+    xmir_screen *xmir = *((xmir_screen **)ctx);
+    xmir_create_input_devices(xmir);
+}
+
 _X_EXPORT Bool
 xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
 {
@@ -187,16 +194,16 @@ xmir_screen_init(ScreenPtr screen, xmir_screen *xmir)
                                                 &xmir_handle_lifecycle_event,
                                                 xmir);
 
-    // TODO: Does not seem right that we have to call this
-    XkbInitPrivates();
+    xmir->delayed_init_handler = 
+        xmir_register_handler(&xmir_delayed_init, sizeof(xmir_screen *));
 
-    xmir_create_input_devices(xmir);
+    xmir_post_to_eventloop(xmir->delayed_init_handler, &xmir);
 
     return TRUE;
 }
 
 _X_EXPORT void
-xmir_screen_close(ScreenPtr screen, xmir_screen *xmir)
+xmir_screen_close(ScreenPtr screen, xmir_screen *xmir)  
 {
 
 }

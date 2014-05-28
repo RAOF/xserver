@@ -38,8 +38,11 @@
 #include "regionstr.h"
 #include "damagestr.h"
 
+#include "compint.h"
+
 #include "xmir.h"
 #include "xmir-private.h"
+#include "xmir-input.h"
 
 #include "xf86.h"
 
@@ -79,8 +82,16 @@ xmir_handle_buffer_available(void *ctx)
     xmir_screen *xmir;
     xmir_window *mir_win = *(xmir_window **)ctx;
 
-    if (mir_win->surface == NULL)
+    if (!mir_surface_is_valid(mir_win->surface)) {
+        xf86Msg(X_INFO, "Buffer-available recieved for invalid surface?\n");
         return;
+    }
+
+    if (mir_win->win == NULL)
+    {
+        xf86Msg(X_ERROR, "WTF? Window %p has NULL win\n", mir_win);
+        return;
+    }
 
     xmir = xmir_screen_get(xmir_window_to_windowptr(mir_win)->drawable.pScreen);
 
@@ -198,6 +209,10 @@ xmir_window_is_dirty(xmir_window *xmir_win)
 _X_EXPORT WindowPtr
 xmir_window_to_windowptr(xmir_window *xmir_win)
 {
+    if (xmir_win->win == NULL)
+    {
+        xf86Msg(X_ERROR, "WTF? Window %p has NULL WindowPtr", xmir_win);
+    }
     return xmir_win->win;
 }
 
@@ -266,20 +281,27 @@ xmir_window_disable_damage_tracking(xmir_window *xmir_win)
 }
 
 static Bool
-xmir_create_window(WindowPtr win)
+xmir_realize_window(WindowPtr win)
 {
     ScreenPtr screen = win->drawable.pScreen;
     xmir_screen *xmir = xmir_screen_get(screen);
     Bool ret;
 
-    screen->CreateWindow = xmir->CreateWindow;
-    ret = (*screen->CreateWindow)(win);
-    screen->CreateWindow = xmir_create_window;
+    screen->RealizeWindow = xmir->RealizeWindow;
+    ret = (*screen->RealizeWindow)(win);
+    screen->RealizeWindow = xmir_realize_window;
 
-    /* Until we support rootless operation, we care only for the root
-     * window, which has no parent.
-     */
+    MirSurfaceParameters params;
+    xmir_window *mir_win = calloc(1, sizeof *mir_win);
+
+    if (mir_win == NULL)
+        return FALSE;
+
+    mir_win->win = win;
+
     if (win->parent == NULL) {
+        CompositeRedirectSubwindows(win, CompositeRedirectManual);
+#if 0
         /* The CRTC setup has already created the root_window_fragments
            array. We need to hook the root window into it */
         for (int i = 0; xmir->root_window_fragments[i] != NULL; i++) {
@@ -289,25 +311,62 @@ xmir_create_window(WindowPtr win)
                really need one, though */
             xmir_window_enable_damage_tracking(xmir->root_window_fragments[i]);
         }
+#endif
+    } else {
+        BoxRec output_bounds = {
+            .x1 = 0,
+            .y1 = 0,
+            .x2 = win->drawable.width,
+            .y2 = win->drawable.height
+        };
+        params.name = "Xorg";
+        params.width = win->drawable.width;
+        params.height = win->drawable.height;
+        /* Is depth == 32 really the only determinant for RGBA visuals? */
+        /* TODO: Actually handle different formats */
+        params.pixel_format = win->drawable.depth == 32 ? mir_pixel_format_argb_8888 :
+                                                          mir_pixel_format_xrgb_8888;
+        params.buffer_usage = mir_buffer_usage_hardware;
+        params.output_id = mir_display_output_id_invalid;
+
+        mir_win->surface = mir_connection_create_surface_sync(xmir_connection_get(),
+                                                              &params);
+        if (!mir_surface_is_valid(mir_win->surface)) {
+            free (mir_win);
+            return FALSE;
+        }
+        MirEventDelegate delegate = {
+            xmir_surface_handle_event,
+            xmir
+        };
+ 
+        mir_surface_set_event_handler(mir_win->surface, &delegate);
+        
+        dixSetPrivate(&win->devPrivates, &xmir_window_private_key, mir_win);
+        RegionInit(&mir_win->region, &output_bounds, 0);
+        xmir_window_enable_damage_tracking(mir_win);
+        /* This window now has a buffer available */
+        xmir_post_to_eventloop(xmir->submit_rendering_handler, &mir_win);
     }
     return ret;
 }
 
 static Bool
-xmir_destroy_window(WindowPtr win)
+xmir_unrealize_window(WindowPtr win)
 {
     ScreenPtr screen = win->drawable.pScreen;
     xmir_screen *xmir = xmir_screen_get(screen);
     Bool ret;
 
-    screen->DestroyWindow = xmir->DestroyWindow;
-    ret = (*screen->DestroyWindow)(win);
-    screen->DestroyWindow = xmir_destroy_window;
+    screen->UnrealizeWindow = xmir->UnrealizeWindow;
+    ret = (*screen->UnrealizeWindow)(win);
+    screen->UnrealizeWindow = xmir_unrealize_window;
 
     /* Until we support rootless operation, we care only for the root
      * window, which has no parent.
      */
     if (win->parent == NULL) {
+#if 0
         /* Break the link with the root_window_fragments */
         for (int i = 0; xmir->root_window_fragments[i] != NULL; i++) {
             xmir->root_window_fragments[i]->win = NULL;
@@ -317,8 +376,15 @@ xmir_destroy_window(WindowPtr win)
             */
             xorg_list_del(&xmir->root_window_fragments[i]->link_damage);
         }
-    }
+#endif
+    } else {
+        xmir_window *mir_win = xmir_window_get(win);
 
+        mir_surface_release_sync(mir_win->surface);
+        xmir_window_disable_damage_tracking(mir_win);
+
+    	free(mir_win);
+    }
     return ret;
 }
 
@@ -328,10 +394,10 @@ xmir_screen_init_window(ScreenPtr screen, xmir_screen *xmir)
     if (!dixRegisterPrivateKey(&xmir_window_private_key, PRIVATE_WINDOW, 0))
         return FALSE;
 
-    xmir->CreateWindow = screen->CreateWindow;
-    screen->CreateWindow = xmir_create_window;
-    xmir->DestroyWindow = screen->DestroyWindow;
-    screen->DestroyWindow = xmir_destroy_window;
+    xmir->RealizeWindow = screen->RealizeWindow;
+    screen->RealizeWindow = xmir_realize_window;
+    xmir->UnrealizeWindow = screen->UnrealizeWindow;
+    screen->UnrealizeWindow = xmir_unrealize_window;
 
     xmir->submit_rendering_handler = 
         xmir_register_handler(&xmir_handle_buffer_available,
