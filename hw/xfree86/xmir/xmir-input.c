@@ -126,7 +126,7 @@ xmir_keyboard_proc(DeviceIntPtr device, int what)
     case DEVICE_INIT:
 	device->public.on = FALSE;
 
-    XkbInitRules(&rmlvo, "evdev", "pc104", "us", "dvorak", NULL);
+    XkbInitRules(&rmlvo, "evdev", "pc104", "us", "", NULL);
 
         // TODO: Mir already does XKB mapping so it seems strange to replicate it here...
         // requires investigation
