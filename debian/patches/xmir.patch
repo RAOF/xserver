@@ -508,7 +508,7 @@ index 0000000..0ebf78f
 +    case DEVICE_INIT:
 +	device->public.on = FALSE;
 +
-+    XkbInitRules(&rmlvo, "evdev", "pc104", "us", "dvorak", NULL);
++    XkbInitRules(&rmlvo, "evdev", "pc104", "us", "", NULL);
 +
 +        // TODO: Mir already does XKB mapping so it seems strange to replicate it here...
 +        // requires investigation
@@ -2265,7 +2265,6 @@ index 0000000..6e8adf0
 +{
 +    xmir_screen *xmir = *((xmir_screen **)ctx);
 +    xmir_create_input_devices(xmir);
-+    raise(SIGSTOP);
 +}
 +
 +_X_EXPORT Bool
