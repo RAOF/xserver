@@ -46,6 +46,7 @@
 #endif
 
 #include "compint.h"
+#include "compositeext.h"
 
 static void
 compScreenUpdate(ScreenPtr pScreen)
@@ -411,6 +412,11 @@ compRedirectSubwindows(ClientPtr pClient, WindowPtr pWin, int update)
     return Success;
 }
 
+int CompositeRedirectSubwindows (WindowPtr pWin, int update)
+{
+    return compRedirectSubwindows (serverClient, pWin, update);
+}
+
 /*
  * Free one of the per-client per-subwindows resources,
  * which frees one redirect per subwindow
@@ -480,6 +486,11 @@ compUnredirectSubwindows(ClientPtr pClient, WindowPtr pWin, int update)
             return Success;
         }
     return BadValue;
+}
+
+int CompositeUnRedirectSubwindows (WindowPtr pWin, int update)
+{
+    return compUnredirectSubwindows (serverClient, pWin, update);
 }
 
 /*

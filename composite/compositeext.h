@@ -34,6 +34,10 @@
 extern _X_EXPORT Bool CompositeRegisterAlternateVisuals(ScreenPtr pScreen,
                                                         VisualID * vids,
                                                         int nVisuals);
+extern _X_EXPORT int CompositeRedirectSubwindows(WindowPtr pWin,
+						 int update);
+extern _X_EXPORT int CompositeUnRedirectSubwindows (WindowPtr pWin,
+						    int update);
 
 extern _X_EXPORT Bool CompositeRegisterImplicitRedirectionException(ScreenPtr pScreen,
                                                                     VisualID parentVisual,
