@@ -1,10 +1,16 @@
-xorg-server (2:1.16.0-1ubuntu1+SYSTEMDESTROYER) utopic; urgency=medium
+xorg-server (2:1.16.0-1ubuntu2+AARDVARK3) vivid; urgency=low
+
+  * Build for vivid
+
+ -- Christopher James Halse Rogers <raof@ubuntu.com>  Thu, 06 Nov 2014 15:45:48 +1100
+
+xorg-server (2:1.16.0-1ubuntu2+AARDVARK2) utopic; urgency=medium
 
   [ Maarten Lankhorst ]
   * Remove outdated breaks/replaces, only affects the lts.
 
   [ Christopher James Halse Rogers ]
-  * Refresh rootless XMir hack for 1.16
+  * Refresh rootless XMir hack for 1.16. Now with 20% less dvorak!
   
  -- Christopher James Halse Rogers <raof@ubuntu.com>  Wed, 22 Oct 2014 11:18:16 -0400
 

@@ -293,22 +293,6 @@ index 6e374eb..226ae5d 100644
  /* xf86Helper.c */
  extern _X_EXPORT void
  xf86LogInit(void);
-diff --git a/hw/xfree86/common/xf86Xinput.h b/hw/xfree86/common/xf86Xinput.h
-index 9fe8c87..f8ee764 100644
---- a/hw/xfree86/common/xf86Xinput.h
-+++ b/hw/xfree86/common/xf86Xinput.h
-@@ -181,9 +181,8 @@ extern _X_EXPORT void xf86DisableDevice(DeviceIntPtr dev, Bool panic);
- extern _X_EXPORT void xf86EnableDevice(DeviceIntPtr dev);
- extern _X_EXPORT void xf86InputEnableVTProbe(void);
- 
--/* not exported */
--int xf86NewInputDevice(InputInfoPtr pInfo, DeviceIntPtr *pdev, BOOL is_auto);
--InputInfoPtr xf86AllocateInput(void);
-+extern _X_EXPORT int xf86NewInputDevice(InputInfoPtr pInfo, DeviceIntPtr *pdev, BOOL is_auto);
-+extern _X_EXPORT InputInfoPtr xf86AllocateInput(void);
- 
- /* xf86Helper.c */
- extern _X_EXPORT void xf86AddInputDriver(InputDriverPtr driver, void *module,
 diff --git a/hw/xfree86/ramdac/xf86Cursor.c b/hw/xfree86/ramdac/xf86Cursor.c
 index fac6822..7becd5f 100644
 --- a/hw/xfree86/ramdac/xf86Cursor.c
@@ -376,7 +360,7 @@ index 0000000..652971f
 +sdk_HEADERS = xmir.h
 diff --git a/hw/xfree86/xmir/xmir-input.c b/hw/xfree86/xmir/xmir-input.c
 new file mode 100644
-index 0000000..0ebf78f
+index 0000000..f260f16
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-input.c
 @@ -0,0 +1,285 @@
@@ -1676,7 +1660,7 @@ index 0000000..2e60aec
 +
 diff --git a/hw/xfree86/xmir/xmir-window.c b/hw/xfree86/xmir/xmir-window.c
 new file mode 100644
-index 0000000..e7142f4
+index 0000000..5e690ce
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir-window.c
 @@ -0,0 +1,409 @@
@@ -2063,7 +2047,7 @@ index 0000000..e7142f4
 +        xmir_window *mir_win = xmir_window_get(win);
 +
 +        mir_surface_release_sync(mir_win->surface);
-+//        xmir_window_disable_damage_tracking(mir_win);
++        xmir_window_disable_damage_tracking(mir_win);
 +
 +    	free(mir_win);
 +    }
@@ -2091,10 +2075,10 @@ index 0000000..e7142f4
 +}
 diff --git a/hw/xfree86/xmir/xmir.c b/hw/xfree86/xmir/xmir.c
 new file mode 100644
-index 0000000..6e8adf0
+index 0000000..9583d3f
 --- /dev/null
 +++ b/hw/xfree86/xmir/xmir.c
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,277 @@
 +/*
 + * Copyright © 2012 Canonical, Inc
 + *
